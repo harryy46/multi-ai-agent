@@ -267,7 +267,7 @@ app.get('/', (req, res) => {
             '<div class="record"><b>[' + r.id + '] ' + (r.businessName || r.businessId) + '</b><br>' +
             'Customer: ' + r.customerName + ' (' + r.phone + ')<br>' +
             r.requestType + ': ' + r.details + '<br>' +
-            '<span style="color:#64748b; font-size:11px;">' + (r.timestamp || '') + '</span><br><button type="button" onclick="openWaAlert(\''+r.phone+'\',\''+r.customerName+'\',\''+(r.businessName||r.businessId)+'\',\''+r.requestType+'\',\''+r.details+'\')" style="margin-top:8px;padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">📲 WhatsApp Customer</button></div>'
+            '<span style="color:#64748b; font-size:11px;">' + (r.timestamp || '') + '</span><br><button type="button" onclick="openWaAlert(\x27'+r.phone+'\x27,\x27'+r.customerName+'\x27,\x27'+(r.businessName?r.businessName:r.businessId)+'\x27,\x27'+r.requestType+'\x27,\x27'+r.details+'\x27)" style="margin-top:8px;padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">📲 WhatsApp Customer</button></div>'
           ).join('');
         }
 
