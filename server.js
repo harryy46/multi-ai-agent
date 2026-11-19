@@ -92,7 +92,7 @@ app.get('/api/data', (req, res) => {
 });
 
 // API: Admin Panel se naya business add karne ke liye
-app.post('/api/businesses', (req, res) => { const ep=process.env.ADMIN_PIN?process.env.ADMIN_PIN:'4646'; if(req.headers['x-admin-pin']!==ep)return res.status(401).json({error:'Invalid Admin PIN'});
+app.post('/api/es', (req, res) => { const ep=process.env.ADMIN_PIN?process.env.ADMIN_PIN:'4646'; if(req.headers['x-admin-pin']!==ep)return res.status(401).json({error:'Invalid Admin PIN'});
   const { name, type, details, instructions } = req.body;
   if (!name || !type || !details) {
     return res.status(400).json({ error: "Name, Type aur Details zaroori hain!" });
@@ -170,7 +170,7 @@ app.get('/', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Multi-Business AI SaaS</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+      <title>Multi-Business AI SaaS</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?v=1795131789244");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
       <style>
         * { box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #f8fafc; margin: 0; padding: 16px; }
