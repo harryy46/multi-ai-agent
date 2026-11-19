@@ -209,7 +209,7 @@ app.get('/', (req, res) => {
         <div id="viewChat" class="grid">
           <div class="card">
             <label style="margin-top:0;"><b>Select Active Business:</b></label>
-            <select id="bizSelect" onchange="resetChat()"></select><button type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
+            <select id="bizSelect" onchange="resetChat()"></select><button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
             <div id="chatBox"></div>
             <div style="display: flex; gap: 8px;">
               <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
@@ -295,7 +295,7 @@ app.get('/', (req, res) => {
           renderRecords(data.records);
           resetChat();
         }
-        function copyClientLink(){const id=document.getElementById("bizSelect").value;const url=window.location.origin+"/?b="+encodeURIComponent(id);if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>alert("Client Link Copied! "+url)).catch(()=>prompt("Copy link:",url));}else{prompt("Copy link:",url);}} const _origInit=init; init=async function(){await _origInit(); const p=new URLSearchParams(window.location.search).get("b"); if(p && allBusinesses[p]){document.getElementById("bizSelect").value=p; resetChat(); const h=document.querySelector("h1,h2"); if(h)h.innerText=allBusinesses[p].name; const t=document.getElementById("tabAdmin"); if(t&&t.parentElement)t.parentElement.style.display="none"; const s=document.getElementById("bizSelect"); if(s&&s.parentElement)s.parentElement.style.display="none"; const r=document.getElementById("recordsBox"); if(r&&r.parentElement)r.parentElement.style.display="none";}}; init();
+        function copyClientLink(){const id=document.getElementById("bizSelect").value;const url=window.location.origin+"/?b="+encodeURIComponent(id);if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>alert("Client Link Copied! "+url)).catch(()=>prompt("Copy link:",url));}else{prompt("Copy link:",url);}} const _origInit=init; init=async function(){await _origInit(); const p=new URLSearchParams(window.location.search).get("b"); if(p && allBusinesses[p]){document.getElementById("bizSelect").value=p; resetChat(); const h=document.querySelector("h1,h2"); if(h)h.innerText=allBusinesses[p].name; const t=document.getElementById("tabAdmin"); if(t&&t.parentElement)t.parentElement.style.display="none"; const s=document.getElementById("bizSelect"); if(s){if(s.previousElementSibling)s.previousElementSibling.style.display="none"; s.style.display="none";} const cb=document.getElementById("copyLinkBtn"); if(cb)cb.style.display="none"; const r=document.getElementById("recordsBox"); if(r&&r.parentElement)r.parentElement.style.display="none";}}; init();
 
         async function addBusiness() {
           const name = document.getElementById('bName').value.trim();
