@@ -259,7 +259,7 @@ app.get('/', (req, res) => {
 
         function renderRecords(records) {
           const box = document.getElementById('recordsBox');
-          if (!records || records.length === 0) {
+          window._recs=records; if (!records || records.length === 0) {
             box.innerHTML = '<p style="color: #64748b; font-size: 13px;">Abhi koi booking nahi hai.</p>';
             return;
           }
@@ -271,7 +271,7 @@ app.get('/', (req, res) => {
           ).join('');
         }
 
-        function populateDropdown(businesses, selectId) {
+        function addWaCards(){const box=document.getElementById("recordsBox");if(!box||!window._recs)return;const cards=box.querySelectorAll(".record");window._recs.forEach(function(r,i){if(cards[i]&&!cards[i].querySelector(".wab")){const b=document.createElement("button");b.type="button";b.className="wab";b.innerText="📲 WhatsApp Customer";b.style.cssText="display:block;margin-top:8px;padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;";b.onclick=function(){openWaAlert(r.phone,r.customerName,r.businessName?r.businessName:r.businessId,r.requestType,r.details);};cards[i].appendChild(b);}});} setInterval(addWaCards,1000); function populateDropdown(businesses, selectId) {
           allBusinesses = businesses;
           const sel = document.getElementById(selectId || 'bizSelect');
           const currentVal = sel.value;
