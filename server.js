@@ -271,7 +271,7 @@ app.get('/', (req, res) => {
           ).join('');
         }
 
-        function populateDropdown(businesses, selectId) {
+        function openWaAlert(phone,custName,bizName,reqType,details){const clean=String(phone?phone:"").replace(/[^0-9]/g,""); const num=clean.length===10?"91"+clean:clean; const msg="Namaste "+(custName?custName:"Customer")+", aapki *"+(bizName?bizName:"Business")+"* par *"+(reqType?reqType:"Booking")+"* confirm ho gayi hai!\nDetails: "+(details?details:""); const url=num?"https://wa.me/"+num+"?text="+encodeURIComponent(msg):"https://wa.me/?text="+encodeURIComponent(msg); window.open(url,"_blank");} function makeWaBtn(r,label){const b=document.createElement("button"); b.type="button"; b.innerText=label; b.style.cssText="margin-top:8px;padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;display:inline-block;"; b.onclick=function(){openWaAlert(r.phone,r.customerName,r.businessName?r.businessName:r.businessId,r.requestType,r.details);}; return b;} const _origRender=renderRecords; renderRecords=function(records){_origRender(records); const cards=document.querySelectorAll("#recordsBox .record"); if(records&&cards.length===records.length){records.forEach(function(r,i){cards[i].appendChild(document.createElement("br")); cards[i].appendChild(makeWaBtn(r,"📲 WhatsApp Customer"));});}}; function populateDropdown(businesses, selectId) {
           allBusinesses = businesses;
           const sel = document.getElementById(selectId || 'bizSelect');
           const currentVal = sel.value;
@@ -351,7 +351,7 @@ app.get('/', (req, res) => {
             } else if (data.error) {
               chatBox.innerHTML += '<div class="msg err">Error: ' + data.error + '</div>';
             }
-            if (data.records) renderRecords(data.records);
+            if (data.records) { renderRecords(data.records); const last=data.records[data.records.length-1]; if(last){const d=document.createElement("div"); d.style.margin="6px 0 12px 0"; d.appendChild(makeWaBtn(last,"📲 Send Booking Receipt on WhatsApp")); chatBox.appendChild(d);} }
           } catch (e) {
             chatBox.innerHTML += '<div class="msg err">Error: ' + e.message + '</div>';
           }
