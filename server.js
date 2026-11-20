@@ -198,7 +198,7 @@ app.get('/', (req, res) => {
     <body><div id="adminLockModal" style="display:none;position:fixed;inset:0;background:#020617;z-index:9999;align-items:center;justify-content:center;padding:20px;"><div style="background:#0f172a;border:1px solid #1e293b;padding:24px;border-radius:14px;max-width:360px;width:100%;text-align:center;color:#f8fafc;"><h2 style="margin:0 0 8px 0;">🔐 SaaS Admin Login</h2><p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Dashboard & Bookings access karne ke liye Admin PIN daalein</p><input id="adminPinInput" type="password" inputmode="numeric" placeholder="Enter Admin PIN" style="width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;text-align:center;font-size:18px;letter-spacing:4px;margin-bottom:12px;"><button onclick="unlockAdmin()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Unlock Dashboard</button><p id="pinErr" style="color:#f87171;font-size:12px;margin-top:10px;"></p></div></div>
       <div class="container">
         <div class="header">
-          <h2 style="margin:0; font-size: 20px;">AI Support & Booking SaaS</h2>
+          <h2 style="margin:0; font-size: 20px;">NexaDesk AI — Enterprise SaaS</h2>
           <div class="tabs">
             <button class="tab-btn active" id="tabChat" onclick="switchTab('chat')">AI Chat & Bookings</button>
             <button class="tab-btn" id="tabAdmin" onclick="switchTab('admin')">+ Add Business (Admin)</button>
