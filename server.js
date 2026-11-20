@@ -373,6 +373,8 @@ app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booki
 app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
 app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
-app.listen(process.env.PORT || 3000, () => {
+
+const JB_BIN=process.env.JSONBIN_BIN,JB_KEY=process.env.JSONBIN_KEY;async function pullCloud(){if(!JB_BIN||!JB_KEY)return;try{const r=await fetch("https://api.jsonbin.io/v3/b/"+JB_BIN+"/latest",{headers:{"X-Master-Key":JB_KEY}});const j=await r.json();if(j&&j.record&&j.record.businesses){fs.writeFileSync("database.json",JSON.stringify(j.record,null,2));console.log("CLOUD_PULLED");}}catch(e){console.error("PULL_ERR",e.message);}}function pushCloud(d){if(!JB_BIN||!JB_KEY)return;fetch("https://api.jsonbin.io/v3/b/"+JB_BIN,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":JB_KEY},body:JSON.stringify(d)}).catch(e=>console.error("PUSH_ERR",e.message));}
+pullCloud().then(()=>app.listen(process.env.PORT || 3000, () => {
   console.log('Multi-Business AI SaaS running at http://localhost:3000');
 });
