@@ -1,3 +1,4 @@
+import { MongoClient } from 'mongodb';
 import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
@@ -380,7 +381,7 @@ app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
 app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
 
-const { MongoClient } = require('mongodb');
+
 let _col;
 async function getCol(){if(_col)return _col;const c=new MongoClient(process.env.MONGODB_URI);await c.connect();_col=c.db('smartbooking').collection('app_state');return _col;}
 app.get('/api/cloud-state',async(req,res)=>{try{if(!process.env.MONGODB_URI)return res.json({data:{}});const col=await getCol();const doc=await col.findOne({_id:'main'});res.json({data:doc?doc.data:{}});}catch(e){res.status(500).json({error:e.message});}});
