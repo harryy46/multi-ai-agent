@@ -384,6 +384,9 @@ async function getCol(){if(_col)return _col;const c=new MongoClient(process.env.
 app.get('/api/cloud-state',async(req,res)=>{try{if(!process.env.MONGODB_URI)return res.json({data:{}});const col=await getCol();const doc=await col.findOne({_id:'main'});res.json({data:doc?doc.data:{}});}catch(e){res.status(500).json({error:e.message});}});
 app.post('/api/cloud-state',async(req,res)=>{try{if(!process.env.MONGODB_URI)return res.json({ok:false});const col=await getCol();await col.updateOne({_id:'main'},{$set:{data:req.body.data||{},updatedAt:new Date()}},{upsert:true});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});}});
 
+
+app.get('/.well-known/assetlinks.json',(req,res)=>{res.type('application/json').send("[{\n      \"relation\": [\"delegate_permission/common.handle_all_urls\"],\n      \"target\": {\n        \"namespace\": \"android_app\",\n        \"package_name\": \"com.smartbooking.app\",\n        \"sha256_cert_fingerprints\": [\"36:13:B7:9E:AC:21:CD:E5:C7:A8:A5:69:11:EA:A0:32:B8:7F:16:90:70:FF:A7:EB:66:52:CF:89:25:3E:52:42\"]\n      }\n    }]\n");});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log('Multi-Business AI SaaS running at http://localhost:3000');
 });
