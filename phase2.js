@@ -10,9 +10,9 @@
   function extractPrice(text) {
     if (!text) return 0;
     const s = String(text);
-    const tagged = s.match(/(?:rs.?|inr|₹)s*(d+(?:.d+)?)/i);
+    const tagged = s.match(/(?:rs\.?|inr|₹)\s*(\d+(?:\.\d+)?)/i);
     if (tagged) return Math.round(parseFloat(tagged[1]));
-    const nums = s.match(/(d{2,6})/g);
+    const nums = s.match(/\b(\d{2,6})\b/g);
     if (nums && nums.length) return parseInt(nums[nums.length - 1], 10);
     return 0;
   }
@@ -91,7 +91,7 @@
       .sb-p2-link{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border-radius:9px;background:#4f46e5;color:#fff;font-size:12px;font-weight:700;text-decoration:none;border:none;cursor:pointer;}
       .sb-p2-confirm{padding:9px 14px;border-radius:9px;background:#16a34a;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;}
       .sb-p2-status{font-size:12px;margin-top:8px;font-weight:700;color:#34d399;}
-      #sb-p2-rev-bar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;}
+      #sb-p2-rev-bar{display:flex!important;gap:10px!important;flex-wrap:wrap!important;margin:10px 0!important;width:100%!important;}
       .sb-p2-rev-card{flex:1 1 150px;padding:10px 12px;border-radius:12px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;}
       .sb-p2-rev-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700;}
       .sb-p2-rev-val{font-size:16px;font-weight:800;color:#34d399;margin-top:4px;}
@@ -119,7 +119,10 @@
 
     let bar = document.getElementById('sb-p2-rev-bar');
     if (!bar) {
-      const anchor = document.getElementById('sb-pro-bar') || document.querySelector('h1,h2,h3');
+      const savedHdr = Array.from(document.querySelectorAll('h1,h2,h3,h4,div')).find(
+        el => el.children.length === 0 && (el.textContent || '').trim().toLowerCase().includes('saved bookings')
+      );
+      const anchor = (savedHdr && savedHdr.nextElementSibling) || document.getElementById('sb-pro-bar') || savedHdr;
       if (!anchor || !anchor.parentNode) return;
       bar = document.createElement('div');
       bar.id = 'sb-p2-rev-bar';
