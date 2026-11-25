@@ -108,8 +108,37 @@
     } catch (_) {}
   }
 
+  function sanitizePhase2CardButtons(container, bizName) {
+    if (!container) return;
+    const cards = Array.from(container.querySelectorAll('[data-p2-id]'));
+    cards.forEach(card => {
+      const actionButtons = Array.from(card.querySelectorAll('button[data-p2-act]'));
+      const groups = [];
+      actionButtons.forEach(btn => {
+        const grp = btn.parentElement;
+        if (grp && !groups.includes(grp)) groups.push(grp);
+      });
+      groups.slice(1).forEach(extraGrp => extraGrp.remove());
+
+      actionButtons.forEach(btn => {
+        if (!btn.closest('[data-p2-id]')) return;
+        btn.onclick = () => {
+          const id = card.getAttribute('data-p2-id') || '';
+          const nextSt = btn.getAttribute('data-p2-act') || 'PENDING';
+          if (id) {
+            updatePhase2BookingStatus(bizName, id, nextSt);
+            renderPhase2BookingsInAdmin();
+          }
+        };
+      });
+    });
+  }
+
+
 
   function renderPhase2BookingsInAdmin() {
+    const existingWrap = document.getElementById('sb-p2-bookings-wrap');
+    if (existingWrap) sanitizePhase2CardButtons(existingWrap, getBizKey());
     if (isCustPage) return;
     const bizName = getBizKey();
     const key = normBiz(bizName) || 'default';
@@ -171,6 +200,7 @@
         </div>
       `;
     }).join('');
+    sanitizePhase2CardButtons(wrap, bizName);
 
     Array.from(wrap.querySelectorAll('[data-p2-id]')).forEach(card => {
       const btnGroups = Array.from(card.querySelectorAll('[data-p2-btns="1"]'));
