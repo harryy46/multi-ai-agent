@@ -475,9 +475,7 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
     });
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(buildPanel, 600);
-  });
+  function syncDD(){var sel=document.querySelector('select');if(!sel||!biz)return;if(!Array.from(sel.options).some(function(o){return o.value===biz})){var o=document.createElement('option');o.value=biz;o.text=biz;sel.insertBefore(o,sel.firstChild);}if(sel.value!==biz){sel.value=biz;sel.dispatchEvent(new Event('change',{bubbles:true}));}}syncDD();setTimeout(syncDD,500);setTimeout(buildPanel,300);setTimeout(buildPanel,1200);
 })();
 </script>
 </body>
