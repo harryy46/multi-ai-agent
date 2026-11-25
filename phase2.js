@@ -93,6 +93,22 @@
     } catch (_) {}
   }
 
+  function updatePhase2BookingStatus(bizName, bookingId, nextStatus) {
+    const key = normBiz(bizName) || 'default';
+    try {
+      const map = JSON.parse(localStorage.getItem('sb_p2_bookings') || '{}');
+      if (!Array.isArray(map[key])) return;
+      map[key] = map[key].map(item => {
+        if (item.id === bookingId) {
+          return Object.assign({}, item, { status: nextStatus });
+        }
+        return item;
+      });
+      localStorage.setItem('sb_p2_bookings', JSON.stringify(map));
+    } catch (_) {}
+  }
+
+
   function renderPhase2BookingsInAdmin() {
     if (isCustPage) return;
     const bizName = getBizKey();
@@ -132,19 +148,41 @@
     }
 
     wrap.innerHTML = filtered.slice(0, 15).map(b => {
+      const stLabel = (b.status || 'PENDING').toUpperCase();
       const tag = b.mode === 'UPI_PAID' ? 'PAID ₹' + (b.amount || 0) : 'PAY LATER ₹' + (b.amount || 0);
       const tagColor = b.mode === 'UPI_PAID' ? '#16a34a' : '#d97706';
+      const stColor = stLabel === 'CANCELLED' ? '#dc2626' : (stLabel === 'COMPLETED' ? '#2563eb' : '#eab308');
       return `
-        <div style="padding:10px 12px;border-radius:10px;background:#0f172a;border:1px solid #334155;color:#f8fafc;font-size:12px;">
+        <div data-p2-id="${b.id}" style="padding:10px 12px;border-radius:10px;background:#0f172a;border:1px solid #334155;color:#f8fafc;font-size:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-            <b>${b.id}</b>
+            <div>
+              <b>${b.id}</b>
+              <span style="margin-left:6px;padding:2px 6px;border-radius:6px;background:${stColor};color:#0f172a;font-size:10px;font-weight:800;">${stLabel}</span>
+            </div>
             <span style="padding:2px 8px;border-radius:6px;background:${tagColor};color:#fff;font-size:10px;font-weight:800;">${tag}</span>
           </div>
           <div style="margin-top:4px;color:#cbd5e1;">${b.service || 'Service'} • <b>${b.slot || 'Slot'}</b></div>
           <div style="margin-top:2px;font-size:11px;color:#94a3b8;">${b.biz} • ${b.createdAt || ''}</div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button type="button" data-p2-act="CONFIRMED" style="padding:5px 10px;border-radius:7px;border:none;background:#22c55e;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Confirm</button>
+            <button type="button" data-p2-act="COMPLETED" style="padding:5px 10px;border-radius:7px;border:none;background:#2563eb;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Complete</button>
+            <button type="button" data-p2-act="CANCELLED" style="padding:5px 10px;border-radius:7px;border:none;background:#dc2626;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
+          </div>
         </div>
       `;
     }).join('');
+
+    Array.from(wrap.querySelectorAll('button[data-p2-act]')).forEach(btn => {
+      btn.onclick = () => {
+        const card = btn.closest('[data-p2-id]');
+        const id = card ? card.getAttribute('data-p2-id') : '';
+        const nextSt = btn.getAttribute('data-p2-act') || 'PENDING';
+        if (id) {
+          updatePhase2BookingStatus(bizName, id, nextSt);
+          renderPhase2BookingsInAdmin();
+        }
+      };
+    });
   }
 
 
