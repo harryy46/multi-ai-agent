@@ -10,22 +10,40 @@
   function extractPrice(text) {
     if (!text) return 0;
     const s = String(text);
-    const tagged = s.match(/(?:rs\.?|inr|₹)\s*(\d+(?:\.\d+)?)/i);
-    if (tagged) return Math.round(parseFloat(tagged[1]));
-    const nums = s.match(/\b(\d{2,6})\b/g);
+    const beforeOrAfter = s.match(/(?:rs\.?|inr|₹)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|₹)/i);
+    if (beforeOrAfter) {
+      return Math.round(parseFloat(beforeOrAfter[1] || beforeOrAfter[2]));
+    }
+    const nums = s.match(/\d{2,6}/g);
     if (nums && nums.length) return parseInt(nums[nums.length - 1], 10);
     return 0;
   }
 
   function getSelectedPanelValues() {
-    const srvEl = document.querySelector('#sb-p1-services .sb-p1-btn.active');
-    const slotEl = document.querySelector('#sb-p1-slots .sb-p1-btn.active:not(.booked)');
-    const stfEl = document.querySelector('#sb-p1-staff .sb-p1-btn.active');
-    return {
-      service: srvEl ? srvEl.textContent.trim() : '',
-      slot: slotEl ? slotEl.textContent.trim() : '',
-      staff: stfEl ? stfEl.textContent.trim() : ''
-    };
+    const srvEl =
+      document.querySelector('#sb-p1-services .sb-p1-btn.active') ||
+      document.querySelector('#sb-p1-services button[aria-pressed="true"]');
+    const slotEl =
+      document.querySelector('#sb-p1-slots .sb-p1-btn.active:not(.booked):not([disabled])') ||
+      document.querySelector('#sb-p1-slots button.active:not([disabled])');
+    const stfEl =
+      document.querySelector('#sb-p1-staff .sb-p1-btn.active') ||
+      document.querySelector('#sb-p1-staff button.active');
+
+    let service = srvEl ? (srvEl.dataset.val || srvEl.textContent || '').trim() : '';
+    let slot = slotEl ? (slotEl.dataset.val || slotEl.textContent || '').trim() : '';
+    const staff = stfEl ? (stfEl.dataset.val || stfEl.textContent || '').trim() : '';
+
+    if (!service) {
+      const firstSrv = document.querySelector('#sb-p1-services .sb-p1-btn');
+      if (firstSrv) service = (firstSrv.dataset.val || firstSrv.textContent || '').trim();
+    }
+    if (!slot) {
+      const firstSlot = document.querySelector('#sb-p1-slots .sb-p1-btn:not(.booked):not([disabled])');
+      if (firstSlot) slot = (firstSlot.dataset.val || firstSlot.textContent || '').trim();
+    }
+
+    return { service, slot, staff };
   }
 
   function getBizKey() {
@@ -260,6 +278,8 @@
       document.getElementById('sb-m-upi').onclick = () => {
         mode = 'UPI';
         refreshBox();
+    setTimeout(refreshBox, 400);
+    setTimeout(refreshBox, 1200);
       };
       document.getElementById('sb-m-later').onclick = () => {
         mode = 'LATER';
