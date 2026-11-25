@@ -9,8 +9,12 @@
 
   function extractPrice(text) {
     if (!text) return 0;
-    const m = String(text).match(/(?:rs.?|inr|₹)?s*(d{2,6})/i);
-    return m ? parseInt(m[1], 10) : 0;
+    const s = String(text);
+    const tagged = s.match(/(?:rs.?|inr|₹)s*(d+(?:.d+)?)/i);
+    if (tagged) return Math.round(parseFloat(tagged[1]));
+    const nums = s.match(/(d{2,6})/g);
+    if (nums && nums.length) return parseInt(nums[nums.length - 1], 10);
+    return 0;
   }
 
   function getSelectedPanelValues() {
@@ -41,7 +45,7 @@
       const res = await fetch('/api/biz-config?b=' + encodeURIComponent(bizName) + '&_t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        return String((data && data.u) || '').trim();
+        return String((data && (data.u || data.upi || data.upiId)) || '').trim();
       }
     } catch (_) {}
     return '';
