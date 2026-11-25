@@ -4,18 +4,14 @@
   const isCust = location.pathname.includes('chat') || Boolean(bizParam);
   if (!isCust) return;
 
-  const DEFAULT_SERVICES = ['Haircut Rs 150', 'Beard Rs 80', 'Facial Rs 400'];
-  const DEFAULT_STAFF = ['Any Available', 'Senior Staff', 'Specialist'];
+  const DEFAULT_SERVICES = ['General Consultation Rs 200', 'Follow-up Checkup Rs 150', 'Routine Care'];
+  const DEFAULT_STAFF = ['Any Available', 'Senior Specialist', 'Duty Staff'];
 
-  function parseServices(rawText) {
-    if (!rawText || typeof rawText !== 'string') return [];
-    return rawText
-      .split(/[,\n;]+/)
-      .map(s => s.trim())
-      .filter(Boolean);
+  function normalizeBizKey(name) {
+    return String(name || '').trim().toLowerCase();
   }
 
-  function parseStaff(rawText) {
+  function parseList(rawText) {
     if (!rawText || typeof rawText !== 'string') return [];
     return rawText
       .split(/[,\n;]+/)
@@ -69,21 +65,47 @@
     return slots.length ? slots : defaultSlots;
   }
 
-  function getBookedSlots(bizKey) {
+  function getBookedSlots(bizName) {
+    const key = normalizeBizKey(bizName);
+    if (!key) return [];
     try {
       const map = JSON.parse(localStorage.getItem('sb_booked_slots_by_biz') || '{}');
-      return Array.isArray(map[bizKey]) ? map[bizKey] : [];
+      return Array.isArray(map[key]) ? map[key] : [];
     } catch (_) {
       return [];
     }
   }
 
-  function saveBookedSlot(bizKey, slot) {
+  function saveBookedSlot(bizName, slot) {
+    const key = normalizeBizKey(bizName);
+    if (!key || !slot) return;
     try {
       const map = JSON.parse(localStorage.getItem('sb_booked_slots_by_biz') || '{}');
-      if (!Array.isArray(map[bizKey])) map[bizKey] = [];
-      if (!map[bizKey].includes(slot)) map[bizKey].push(slot);
+      if (!Array.isArray(map[key])) map[key] = [];
+      if (!map[key].includes(slot)) map[key].push(slot);
       localStorage.setItem('sb_booked_slots_by_biz', JSON.stringify(map));
+    } catch (_) {}
+  }
+
+  function getIsolatedLocalCfg(bizName) {
+    const key = normalizeBizKey(bizName);
+    if (!key) return {};
+    try {
+      const perBizMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}');
+      if (perBizMap && typeof perBizMap === 'object' && perBizMap[key]) {
+        return perBizMap[key];
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  function setIsolatedLocalCfg(bizName, cfgObj) {
+    const key = normalizeBizKey(bizName);
+    if (!key || !cfgObj || typeof cfgObj !== 'object') return;
+    try {
+      const perBizMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}');
+      perBizMap[key] = Object.assign({}, perBizMap[key] || {}, cfgObj);
+      localStorage.setItem('sb_biz_cfg_by_biz', JSON.stringify(perBizMap));
     } catch (_) {}
   }
 
@@ -108,7 +130,7 @@
 
   function syncFormInputs(serviceVal, slotVal, staffVal) {
     const inputs = Array.from(document.querySelectorAll('input,textarea'));
-    const srvInp = inputs.find(i => /service|item|haircut|checkup/i.test(i.placeholder || ''));
+    const srvInp = inputs.find(i => /service|item|haircut|checkup|consultation/i.test(i.placeholder || ''));
     const tmInp = inputs.find(i => /date|time|slot|preferred/i.test(i.placeholder || ''));
     const stfInp = inputs.find(i => /staff|specialist|doctor|stylist/i.test(i.placeholder || ''));
 
@@ -128,18 +150,16 @@
   }
 
   async function loadBizConfig(bizName) {
-    let cfg = {};
-    try {
-      const localCfg = JSON.parse(localStorage.getItem('sb_biz_cfg') || '{}');
-      if (localCfg && typeof localCfg === 'object') cfg = Object.assign({}, cfg, localCfg);
-    } catch (_) {}
-
+    let cfg = Object.assign({}, getIsolatedLocalCfg(bizName));
     if (bizName) {
       try {
         const res = await fetch('/api/biz-config?b=' + encodeURIComponent(bizName));
         if (res.ok) {
           const remote = await res.json();
-          if (remote && typeof remote === 'object') cfg = Object.assign({}, cfg, remote);
+          if (remote && typeof remote === 'object') {
+            cfg = Object.assign({}, cfg, remote);
+            setIsolatedLocalCfg(bizName, cfg);
+          }
         }
       } catch (_) {}
     }
@@ -164,13 +184,13 @@
     }
 
     const cfg = await loadBizConfig(activeBiz);
-    const services = parseServices(cfg.s || cfg.services || '');
+    const services = parseList(cfg.s || cfg.services || '');
     const serviceList = services.length ? services : DEFAULT_SERVICES;
 
     const slots = buildSlotsFromTiming(cfg.t || cfg.timings || '');
     const bookedSet = new Set(getBookedSlots(activeBiz));
 
-    const customStaff = parseStaff(cfg.staff || cfg.specialists || '');
+    const customStaff = parseList(cfg.staff || cfg.specialists || '');
     const staffList = customStaff.length ? customStaff : DEFAULT_STAFF;
 
     let selectedService = serviceList[0] || '';
