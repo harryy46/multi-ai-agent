@@ -267,7 +267,7 @@
         Array.from(stfBox.children).forEach(b => b.classList.toggle('active', b.dataset.val === selectedStaff));
 
         const combinedService = selectedStaff && selectedStaff !== 'Any Available'
-          ? selectedService + ' (' + selectedStaff + ')'
+          ? selectedService + ' [Staff: ' + selectedStaff + ']'
           : selectedService;
         syncFormInputs(combinedService, selectedSlot, selectedStaff);
       }
@@ -344,4 +344,26 @@
   }
 
   setInterval(() => renderPanel(false), 4000);
+
+  const origFetch = window.fetch;
+  window.fetch = function (url, init) {
+    try {
+      if (init && init.method && init.method.toUpperCase() === 'POST' && typeof init.body === 'string') {
+        const activeStf = document.querySelector('#sb-p1-staff .sb-p1-btn.active');
+        const stfName = activeStf ? (activeStf.dataset.val || activeStf.textContent || '').trim() : '';
+        if (stfName && stfName !== 'Any Available') {
+          const parsed = JSON.parse(init.body);
+          if (parsed && typeof parsed === 'object') {
+            if (!parsed.staff) parsed.staff = stfName;
+            if (typeof parsed.message === 'string' && !parsed.message.includes('Staff:')) {
+              parsed.message = parsed.message + ' [Staff: ' + stfName + ']';
+            }
+            init = Object.assign({}, init, { body: JSON.stringify(parsed) });
+          }
+        }
+      }
+    } catch (_) {}
+    return origFetch.call(this, url, init);
+  };
+  window.__sbStaffHook = 'sb-staff-hook';
 })();
