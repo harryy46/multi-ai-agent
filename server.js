@@ -1,4 +1,3 @@
-app.get('/phase1.js', (req, res) => res.sendFile(path.join(__dirname, 'phase1.js')));
 import { MongoClient } from 'mongodb';
 import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -7,7 +6,8 @@ import fs from 'fs';
 
 dotenv.config();
 const app = express();
-app.get('/phase1.js', (req, res) => res.sendFile(require('path').join(__dirname, 'phase1.js')));
+app.get('/phase1.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(path.resolve('phase1.js'), 'utf8')));
+
 
 app.get('/.well-known/assetlinks.json',(req,res)=>{res.type('application/json').send("[{\n      \"relation\": [\"delegate_permission/common.handle_all_urls\"],\n      \"target\": {\n        \"namespace\": \"android_app\",\n        \"package_name\": \"com.smartbooking.app\",\n        \"sha256_cert_fingerprints\": [\"36:13:B7:9E:AC:21:CD:E5:C7:A8:A5:69:11:EA:A0:32:B8:7F:16:90:70:FF:A7:EB:66:52:CF:89:25:3E:52:42\"]\n      }\n    }]\n");});
 
