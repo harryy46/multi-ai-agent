@@ -459,6 +459,22 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
     obs.observe(document.body, { childList: true, subtree: true });
   }
 })();</script>
+<script id="sb-p2-card-guard">(function(){
+    function cleanCards(){
+      document.querySelectorAll('[data-p2-id]').forEach(function(card){
+        var btns = Array.from(card.querySelectorAll('button')).filter(function(b){
+          var t = (b.textContent || '').trim().toLowerCase();
+          return t === 'confirm' || t === 'complete' || t === 'cancel';
+        });
+        btns.slice(3).forEach(function(extra){
+          var p = extra.parentElement;
+          extra.remove();
+          if (p && p.children.length === 0 && !p.hasAttribute('data-p2-id')) p.remove();
+        });
+      });
+    }
+    setInterval(cleanCards, 1500);
+  })();</script>
 </body>
     </html>
   `);

@@ -136,6 +136,32 @@
 
 
 
+  
+  function enforceSingleActionRowOnP2Cards(rootEl) {
+    const scope = rootEl || document;
+    const cards = Array.from(scope.querySelectorAll('[data-p2-id]'));
+    cards.forEach(card => {
+      const allBtns = Array.from(card.querySelectorAll('button')).filter(b => {
+        const t = (b.textContent || '').trim().toLowerCase();
+        return t === 'confirm' || t === 'complete' || t === 'cancel';
+      });
+      // Keep only the first 3 (1 Confirm, 1 Complete, 1 Cancel)
+      const keepSet = new Set(allBtns.slice(0, 3));
+      allBtns.slice(3).forEach(extraBtn => {
+        const parent = extraBtn.parentElement;
+        extraBtn.remove();
+        if (parent && parent.children.length === 0 && !parent.hasAttribute('data-p2-id')) {
+          parent.remove();
+        }
+      });
+      keepSet.forEach(btn => {
+        if (!btn.style.width || btn.style.width === '100%') {
+          btn.style.width = 'auto';
+        }
+      });
+    });
+  }
+
   function renderPhase2BookingsInAdmin() {
     const existingWrap = document.getElementById('sb-p2-bookings-wrap');
     if (existingWrap) sanitizePhase2CardButtons(existingWrap, getBizKey());
@@ -201,6 +227,7 @@
       `;
     }).join('');
     sanitizePhase2CardButtons(wrap, bizName);
+    enforceSingleActionRowOnP2Cards(wrap);
 
     Array.from(wrap.querySelectorAll('[data-p2-id]')).forEach(card => {
       const btnGroups = Array.from(card.querySelectorAll('[data-p2-btns="1"]'));
