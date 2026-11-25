@@ -163,7 +163,7 @@
           </div>
           <div style="margin-top:4px;color:#cbd5e1;">${b.service || 'Service'} • <b>${b.slot || 'Slot'}</b></div>
           <div style="margin-top:2px;font-size:11px;color:#94a3b8;">${b.biz} • ${b.createdAt || ''}</div>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <div data-p2-btns="1" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
             <button type="button" data-p2-act="CONFIRMED" style="padding:5px 10px;border-radius:7px;border:none;background:#22c55e;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Confirm</button>
             <button type="button" data-p2-act="COMPLETED" style="padding:5px 10px;border-radius:7px;border:none;background:#2563eb;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Complete</button>
             <button type="button" data-p2-act="CANCELLED" style="padding:5px 10px;border-radius:7px;border:none;background:#dc2626;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
@@ -171,6 +171,23 @@
         </div>
       `;
     }).join('');
+
+    Array.from(wrap.querySelectorAll('[data-p2-id]')).forEach(card => {
+      const btnGroups = Array.from(card.querySelectorAll('[data-p2-btns="1"]'));
+      btnGroups.slice(1).forEach(extra => extra.remove());
+    });
+
+    Array.from(wrap.querySelectorAll('button[data-p2-act]')).forEach(btn => {
+      btn.onclick = () => {
+        const card = btn.closest('[data-p2-id]');
+        const id = card ? card.getAttribute('data-p2-id') : '';
+        const nextSt = btn.getAttribute('data-p2-act') || 'PENDING';
+        if (id) {
+          updatePhase2BookingStatus(bizName, id, nextSt);
+          renderPhase2BookingsInAdmin();
+        }
+      };
+    });
 
     Array.from(wrap.querySelectorAll('button[data-p2-act]')).forEach(btn => {
       btn.onclick = () => {
