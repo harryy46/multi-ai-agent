@@ -1,3 +1,4 @@
+app.get('/phase1.js', (req, res) => res.sendFile(path.join(__dirname, 'phase1.js')));
 import { MongoClient } from 'mongodb';
 import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
