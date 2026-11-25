@@ -7,6 +7,7 @@ import fs from 'fs';
 dotenv.config();
 const app = express();
 app.get('/phase1.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase1.js', import.meta.url), 'utf8')));
+app.get('/phase2.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase2.js', import.meta.url), 'utf8')));
 
 
 
@@ -381,6 +382,7 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
 .sb-p1-note{font-size:11px;color:#94a3b8;margin-top:-6px;margin-bottom:10px}
 </style>
 <script src="/phase1.js"></script>
+<script src="/phase2.js"></script>
 </body>
     </html>
   `);
