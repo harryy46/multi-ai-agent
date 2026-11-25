@@ -376,108 +376,7 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
 .sb-p1-chip.booked{background:#020617;border-color:#1e293b;color:#475569;text-decoration:line-through;cursor:not-allowed}
 .sb-p1-note{font-size:11px;color:#94a3b8;margin-top:-6px;margin-bottom:10px}
 </style>
-<script id="sb-p1-js">
-(function(){
-  const p = new URLSearchParams(location.search);
-  const isCust = location.pathname.includes('chat') || p.has('b') || p.has('business') || p.has('client');
-  if (!isCust) return;
-
-  const biz = (p.get('b') || p.get('business') || 'Smart Booking').trim();
-  const defaultSlots = ['10:00 AM','11:00 AM','12:00 PM','01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM','07:00 PM','08:00 PM'];
-  const staffList = ['Any Available', 'Senior Staff', 'Specialist'];
-  let selService = '', selSlot = '', selStaff = 'Any Available';
-
-  function setInput(id, val){
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = val;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  function syncForm(){
-    if (selService) setInput('cbService', selService + (selStaff !== 'Any Available' ? ' [' + selStaff + ']' : ''));
-    if (selSlot) setInput('cbTime', 'Today ' + selSlot);
-  }
-
-  async function buildPanel(){
-    if (document.getElementById('sb-p1-panel')) return;
-    const anchor = document.getElementById('sb-quick-wrap') || document.body.firstElementChild;
-    if (!anchor) return;
-
-    const cfg = await fetch('/api/biz-config?b=' + encodeURIComponent(biz)).then(r => r.json()).catch(() => ({}));
-    const bookedList = await fetch('/api/walkin-bookings?b=' + encodeURIComponent(biz)).then(r => r.json()).catch(() => []);
-    const bookedTimes = (Array.isArray(bookedList) ? bookedList : []).map(x => String(x.time || '').toLowerCase());
-
-    const rawServices = (cfg && cfg.s ? cfg.s : 'Haircut Rs 150, Beard Rs 80, Facial Rs 400')
-      .split(/[,\n]+/).map(x => x.trim()).filter(Boolean);
-
-    const panel = document.createElement('div');
-    panel.id = 'sb-p1-panel';
-    panel.innerHTML =
-      '<div class="sb-p1-title">1. Select Service</div>' +
-      '<div class="sb-p1-grid" id="sb-p1-svcs"></div>' +
-      '<div class="sb-p1-title">2. Select Available Time Slot</div>' +
-      '<div class="sb-p1-grid" id="sb-p1-slots"></div>' +
-      '<div class="sb-p1-note">Grey slots are already booked.</div>' +
-      '<div class="sb-p1-title">3. Preferred Staff / Specialist</div>' +
-      '<div class="sb-p1-grid" id="sb-p1-staff"></div>';
-
-    anchor.insertAdjacentElement('afterend', panel);
-
-    const svcBox = document.getElementById('sb-p1-svcs');
-    rawServices.forEach(sv => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sb-p1-chip';
-      b.textContent = sv;
-      b.onclick = () => {
-        selService = sv;
-        svcBox.querySelectorAll('.sb-p1-chip').forEach(x => x.classList.remove('sel'));
-        b.classList.add('sel');
-        syncForm();
-      };
-      svcBox.appendChild(b);
-    });
-
-    const slotBox = document.getElementById('sb-p1-slots');
-    defaultSlots.forEach(sl => {
-      const isBooked = bookedTimes.some(t => t.includes(sl.toLowerCase()) || t.includes(sl.replace(':00 ',' ').toLowerCase()));
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sb-p1-chip' + (isBooked ? ' booked' : '');
-      b.textContent = isBooked ? sl + ' (Booked)' : sl;
-      b.disabled = isBooked;
-      if (!isBooked) {
-        b.onclick = () => {
-          selSlot = sl;
-          slotBox.querySelectorAll('.sb-p1-chip').forEach(x => x.classList.remove('sel'));
-          b.classList.add('sel');
-          syncForm();
-        };
-      }
-      slotBox.appendChild(b);
-    });
-
-    const stfBox = document.getElementById('sb-p1-staff');
-    staffList.forEach(st => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sb-p1-chip' + (st === selStaff ? ' sel' : '');
-      b.textContent = st;
-      b.onclick = () => {
-        selStaff = st;
-        stfBox.querySelectorAll('.sb-p1-chip').forEach(x => x.classList.remove('sel'));
-        b.classList.add('sel');
-        syncForm();
-      };
-      stfBox.appendChild(b);
-    });
-  }
-
-  function syncDD(){var sel=document.querySelector('select');if(!sel||!biz)return;if(!Array.from(sel.options).some(function(o){return o.value===biz})){var o=document.createElement('option');o.value=biz;o.text=biz;sel.insertBefore(o,sel.firstChild);}if(sel.value!==biz){sel.value=biz;sel.dispatchEvent(new Event('change',{bubbles:true}));}}syncDD();setTimeout(syncDD,500);setTimeout(buildPanel,300);setTimeout(buildPanel,1200);
-})();
-</script>
+<script src="/phase1.js"></script>
 </body>
     </html>
   `);
@@ -511,6 +410,7 @@ app.get('/privacy',(req,res)=>res.send('<!doctype html><html><head><meta name="v
 const _sbMemCfg={};const _sbMemWalk=[];function _sbDb(){try{const m=require('mongoose');return m.connection&&m.connection.readyState===1?m.connection.db:null;}catch(e){return null;}}app.get('/api/biz-config',async(req,res)=>{const b=(req.query.b||'default').trim();try{const db=_sbDb();if(db){const doc=await db.collection('sb_biz_configs').findOne({biz:b});if(doc)return res.json(doc);}}catch(e){}res.json(_sbMemCfg[b]||{biz:b,t:'',s:'',u:''});});app.post('/api/biz-config',async(req,res)=>{const b=(req.body&&req.body.biz||'default').trim();const d={biz:b,t:req.body.t||'',s:req.body.s||'',u:req.body.u||'',updatedAt:new Date()};_sbMemCfg[b]=d;try{const db=_sbDb();if(db)await db.collection('sb_biz_configs').updateOne({biz:b},{$set:d},{upsert:true});}catch(e){}res.json({ok:true,data:d});});app.get('/api/walkin-bookings',async(req,res)=>{const b=(req.query.b||'').trim();try{const db=_sbDb();if(db){const q=b?{biz:b}:{};const list=await db.collection('sb_walkins').find(q).sort({createdAt:-1}).limit(50).toArray();return res.json(list);}}catch(e){}res.json(b?_sbMemWalk.filter(x=>x.biz===b):_sbMemWalk);});app.post('/api/walkin-bookings',async(req,res)=>{const d=Object.assign({id:'SB-'+Math.floor(1000+Math.random()*9000),status:'CONFIRMED',createdAt:new Date()},req.body||{});_sbMemWalk.unshift(d);try{const db=_sbDb();if(db)await db.collection('sb_walkins').insertOne(d);}catch(e){}res.json({ok:true,booking:d});});
 
 const _sbOtpStore=new Map();app.post('/api/otp/send',async(req,res)=>{const target=((req.body&&(req.body.target||req.body.phone||req.body.email))||'').trim().toLowerCase();if(!target||target.length<4)return res.status(400).json({error:'Valid mobile number or email required'});const code=String(Math.floor(100000+Math.random()*900000));const expiresAt=Date.now()+5*60*1000;_sbOtpStore.set(target,{code,expiresAt});try{const db=_sbDb();if(db)await db.collection('sb_otps').updateOne({target},{$set:{target,code,expiresAt,createdAt:new Date()}},{upsert:true});}catch(e){}return res.json({ok:true,message:'OTP sent to '+target,devOtp:code});});app.post('/api/otp/verify',async(req,res)=>{const target=((req.body&&(req.body.target||req.body.phone||req.body.email))||'').trim().toLowerCase();const otp=((req.body&&req.body.otp)||'').trim();if(!target||!otp)return res.status(400).json({error:'Target and OTP required'});let rec=_sbOtpStore.get(target);try{const db=_sbDb();if(!rec&&db)rec=await db.collection('sb_otps').findOne({target});}catch(e){}if(!rec)return res.status(400).json({error:'OTP not found. Please request a new OTP.'});if(Date.now()>rec.expiresAt){_sbOtpStore.delete(target);return res.status(400).json({error:'OTP expired. Please resend OTP.'});}if(String(rec.code)!==String(otp))return res.status(400).json({error:'Invalid OTP. Please check and try again.'});_sbOtpStore.delete(target);try{const db=_sbDb();if(db)await db.collection('sb_otps').deleteOne({target});}catch(e){}return res.json({ok:true,verified:true});});
+app.get('/phase1.js', (req, res) => res.sendFile(require('path').join(__dirname, 'phase1.js')));
 app.listen(process.env.PORT || 3000, () => {
   console.log('Multi-Business AI SaaS running at http://localhost:3000');
 });
