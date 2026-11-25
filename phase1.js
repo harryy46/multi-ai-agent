@@ -4,11 +4,31 @@
   const isCust = location.pathname.includes('chat') || Boolean(bizParam);
   if (!isCust) return;
 
-  const DEFAULT_SERVICES = ['General Consultation Rs 200', 'Follow-up Checkup Rs 150', 'Routine Care'];
-  const DEFAULT_STAFF = ['Any Available', 'Senior Specialist', 'Duty Staff'];
-
   function normalizeBizKey(name) {
     return String(name || '').trim().toLowerCase();
+  }
+
+  function getSmartDefaults(bizName) {
+    const k = normalizeBizKey(bizName);
+    if (/salon|parlour|parlor|barber|spa|beauty|hair|makeup/.test(k)) {
+      return {
+        services: ['Haircut Rs 150', 'Beard Rs 80', 'Facial Rs 400'],
+        timings: '10:00 AM - 08:00 PM',
+        staff: ['Any Available', 'Senior Stylist', 'Hair Specialist']
+      };
+    }
+    if (/clinic|doctor|dr.|hospital|dental|physio|health|medical/.test(k)) {
+      return {
+        services: ['General Consultation Rs 200', 'Follow-up Checkup Rs 150', 'Routine Care'],
+        timings: '09:00 AM - 06:00 PM',
+        staff: ['Any Available', 'Senior Doctor', 'Duty Specialist']
+      };
+    }
+    return {
+      services: ['Standard Service Rs 199', 'Premium Service Rs 399', 'Quick Session'],
+      timings: '10:00 AM - 08:00 PM',
+      staff: ['Any Available', 'Senior Staff', 'Specialist']
+    };
   }
 
   function parseList(rawText) {
@@ -39,14 +59,15 @@
     return hr;
   }
 
-  function buildSlotsFromTiming(timingStr) {
+  function buildSlotsFromTiming(timingStr, fallbackTiming) {
+    const source = (timingStr && timingStr.trim()) ? timingStr : fallbackTiming;
     const defaultSlots = [
       '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM',
       '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
       '06:00 PM', '07:00 PM', '08:00 PM'
     ];
-    if (!timingStr || typeof timingStr !== 'string') return defaultSlots;
-    const rangeMatch = timingStr.match(/(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)\s*(?:-|to|–)\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)/i);
+    if (!source || typeof source !== 'string') return defaultSlots;
+    const rangeMatch = source.match(/(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)\s*(?:-|to|–)\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM)?)/i);
     if (!rangeMatch) return defaultSlots;
 
     const endMerMatch = rangeMatch[2].match(/(AM|PM)$/i);
@@ -153,7 +174,7 @@
     let cfg = Object.assign({}, getIsolatedLocalCfg(bizName));
     if (bizName) {
       try {
-        const res = await fetch('/api/biz-config?b=' + encodeURIComponent(bizName));
+        const res = await fetch('/api/biz-config?b=' + encodeURIComponent(bizName) + '&_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const remote = await res.json();
           if (remote && typeof remote === 'object') {
@@ -166,125 +187,161 @@
     return cfg;
   }
 
-  async function renderPanel() {
-    ensureStyles();
-    const sel = document.querySelector('select');
-    const activeBiz = (bizParam || (sel && sel.value) || 'Smart Booking').trim();
+  let lastSignature = '';
+  let isRendering = false;
 
-    let panel = document.getElementById('sb-p1-panel');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.id = 'sb-p1-panel';
-      const anchor = document.getElementById('sb-quick-wrap') || document.getElementById('sb-cust-header');
-      if (anchor && anchor.parentNode) {
-        anchor.insertAdjacentElement('afterend', panel);
-      } else {
-        document.body.prepend(panel);
+  async function renderPanel(force) {
+    if (isRendering) return;
+    isRendering = true;
+    try {
+      ensureStyles();
+      const sel = document.querySelector('select');
+      const activeBiz = (bizParam || (sel && sel.value) || 'Smart Booking').trim();
+      const smart = getSmartDefaults(activeBiz);
+
+      let panel = document.getElementById('sb-p1-panel');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'sb-p1-panel';
+        const anchor = document.getElementById('sb-quick-wrap') || document.getElementById('sb-cust-header');
+        if (anchor && anchor.parentNode) {
+          anchor.insertAdjacentElement('afterend', panel);
+        } else {
+          document.body.prepend(panel);
+        }
       }
-    }
 
-    const cfg = await loadBizConfig(activeBiz);
-    const services = parseList(cfg.s || cfg.services || '');
-    const serviceList = services.length ? services : DEFAULT_SERVICES;
+      const cfg = await loadBizConfig(activeBiz);
+      const services = parseList(cfg.s || cfg.services || '');
+      const serviceList = services.length ? services : smart.services;
 
-    const slots = buildSlotsFromTiming(cfg.t || cfg.timings || '');
-    const bookedSet = new Set(getBookedSlots(activeBiz));
+      const slots = buildSlotsFromTiming(cfg.t || cfg.timings || '', smart.timings);
+      const bookedSlots = getBookedSlots(activeBiz);
+      const bookedSet = new Set(bookedSlots);
 
-    const customStaff = parseList(cfg.staff || cfg.specialists || '');
-    const staffList = customStaff.length ? customStaff : DEFAULT_STAFF;
+      const customStaff = parseList(cfg.staff || cfg.specialists || '');
+      const staffList = customStaff.length ? customStaff : smart.staff;
 
-    let selectedService = serviceList[0] || '';
-    let selectedSlot = slots.find(s => !bookedSet.has(s)) || '';
-    let selectedStaff = staffList[0] || '';
-
-    panel.innerHTML = `
-      <div class="sb-p1-sec">
-        <div class="sb-p1-lbl">1. SELECT SERVICE (${activeBiz})</div>
-        <div class="sb-p1-list" id="sb-p1-services"></div>
-      </div>
-      <div class="sb-p1-sec">
-        <div class="sb-p1-lbl">2. SELECT AVAILABLE TIME SLOT</div>
-        <div class="sb-p1-list" id="sb-p1-slots"></div>
-        <div class="sb-p1-hint">Grey slots are already booked for ${activeBiz}.</div>
-      </div>
-      <div class="sb-p1-sec">
-        <div class="sb-p1-lbl">3. PREFERRED STAFF / SPECIALIST</div>
-        <div class="sb-p1-list" id="sb-p1-staff"></div>
-      </div>
-    `;
-
-    const srvBox = document.getElementById('sb-p1-services');
-    const slotBox = document.getElementById('sb-p1-slots');
-    const stfBox = document.getElementById('sb-p1-staff');
-
-    function updateSelectionUI() {
-      Array.from(srvBox.children).forEach(b => b.classList.toggle('active', b.dataset.val === selectedService));
-      Array.from(slotBox.children).forEach(b => {
-        if (!b.disabled) b.classList.toggle('active', b.dataset.val === selectedSlot);
+      const sig = JSON.stringify({
+        activeBiz,
+        serviceList,
+        slots,
+        bookedSlots,
+        staffList
       });
-      Array.from(stfBox.children).forEach(b => b.classList.toggle('active', b.dataset.val === selectedStaff));
 
-      const combinedService = selectedStaff && selectedStaff !== 'Any Available'
-        ? selectedService + ' (' + selectedStaff + ')'
-        : selectedService;
-      syncFormInputs(combinedService, selectedSlot, selectedStaff);
-    }
+      if (!force && sig === lastSignature && document.getElementById('sb-p1-services')) {
+        return;
+      }
+      lastSignature = sig;
 
-    serviceList.forEach(item => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'sb-p1-btn';
-      btn.dataset.val = item;
-      btn.textContent = item;
-      btn.onclick = () => {
-        selectedService = item;
-        updateSelectionUI();
-      };
-      srvBox.appendChild(btn);
-    });
+      let selectedService = serviceList[0] || '';
+      let selectedSlot = slots.find(s => !bookedSet.has(s)) || '';
+      let selectedStaff = staffList[0] || '';
 
-    slots.forEach(slot => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      const isBooked = bookedSet.has(slot);
-      btn.className = 'sb-p1-btn' + (isBooked ? ' booked' : '');
-      btn.dataset.val = slot;
-      btn.disabled = isBooked;
-      btn.textContent = slot;
-      if (!isBooked) {
+      panel.innerHTML = `
+        <div class="sb-p1-sec">
+          <div class="sb-p1-lbl">1. SELECT SERVICE (${activeBiz})</div>
+          <div class="sb-p1-list" id="sb-p1-services"></div>
+        </div>
+        <div class="sb-p1-sec">
+          <div class="sb-p1-lbl">2. SELECT AVAILABLE TIME SLOT</div>
+          <div class="sb-p1-list" id="sb-p1-slots"></div>
+          <div class="sb-p1-hint">Grey slots are already booked for ${activeBiz}.</div>
+        </div>
+        <div class="sb-p1-sec">
+          <div class="sb-p1-lbl">3. PREFERRED STAFF / SPECIALIST</div>
+          <div class="sb-p1-list" id="sb-p1-staff"></div>
+        </div>
+      `;
+
+      const srvBox = document.getElementById('sb-p1-services');
+      const slotBox = document.getElementById('sb-p1-slots');
+      const stfBox = document.getElementById('sb-p1-staff');
+
+      function updateSelectionUI() {
+        Array.from(srvBox.children).forEach(b => b.classList.toggle('active', b.dataset.val === selectedService));
+        Array.from(slotBox.children).forEach(b => {
+          if (!b.disabled) b.classList.toggle('active', b.dataset.val === selectedSlot);
+        });
+        Array.from(stfBox.children).forEach(b => b.classList.toggle('active', b.dataset.val === selectedStaff));
+
+        const combinedService = selectedStaff && selectedStaff !== 'Any Available'
+          ? selectedService + ' (' + selectedStaff + ')'
+          : selectedService;
+        syncFormInputs(combinedService, selectedSlot, selectedStaff);
+      }
+
+      serviceList.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sb-p1-btn';
+        btn.dataset.val = item;
+        btn.textContent = item;
         btn.onclick = () => {
-          selectedSlot = slot;
+          selectedService = item;
           updateSelectionUI();
         };
-      }
-      slotBox.appendChild(btn);
-    });
+        srvBox.appendChild(btn);
+      });
 
-    staffList.forEach(stf => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'sb-p1-btn';
-      btn.dataset.val = stf;
-      btn.textContent = stf;
-      btn.onclick = () => {
-        selectedStaff = stf;
-        updateSelectionUI();
-      };
-      stfBox.appendChild(btn);
-    });
+      slots.forEach(slot => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isBooked = bookedSet.has(slot);
+        btn.className = 'sb-p1-btn' + (isBooked ? ' booked' : '');
+        btn.dataset.val = slot;
+        btn.disabled = isBooked;
+        btn.textContent = slot;
+        if (!isBooked) {
+          btn.onclick = () => {
+            selectedSlot = slot;
+            updateSelectionUI();
+          };
+        }
+        slotBox.appendChild(btn);
+      });
 
-    updateSelectionUI();
+      staffList.forEach(stf => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sb-p1-btn';
+        btn.dataset.val = stf;
+        btn.textContent = stf;
+        btn.onclick = () => {
+          selectedStaff = stf;
+          updateSelectionUI();
+        };
+        stfBox.appendChild(btn);
+      });
 
-    document.addEventListener('submit', () => {
-      if (selectedSlot) {
-        saveBookedSlot(activeBiz, selectedSlot);
-      }
-    }, true);
+      updateSelectionUI();
+    } finally {
+      isRendering = false;
+    }
   }
+
+  document.addEventListener('submit', () => {
+    const sel = document.querySelector('select');
+    const activeBiz = (bizParam || (sel && sel.value) || 'Smart Booking').trim();
+    const activeSlotBtn = document.querySelector('#sb-p1-slots .sb-p1-btn.active:not(.booked)');
+    if (activeSlotBtn && activeSlotBtn.dataset.val) {
+      saveBookedSlot(activeBiz, activeSlotBtn.dataset.val);
+      setTimeout(() => renderPanel(true), 150);
+    }
+  }, true);
+
+  window.addEventListener('storage', () => renderPanel(false));
+  window.addEventListener('focus', () => renderPanel(false));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) renderPanel(false);
+  });
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderPanel);
+    document.addEventListener('DOMContentLoaded', () => renderPanel(true));
   } else {
-    renderPanel();
+    renderPanel(true);
   }
+
+  setInterval(() => renderPanel(false), 4000);
 })();
