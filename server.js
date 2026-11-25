@@ -8,6 +8,7 @@ dotenv.config();
 const app = express();
 app.get('/phase1.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase1.js', import.meta.url), 'utf8')));
 app.get('/phase2.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase2.js', import.meta.url), 'utf8')));
+app.get('/phase3.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase3.js', import.meta.url), 'utf8')));
 
 
 
@@ -383,6 +384,7 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
 </style>
 <script src="/phase1.js"></script>
 <script src="/phase2.js"></script>
+<script src="/phase3.js"></script>
 <script id="sb-admin-full-cfg">(function(){
   const p = new URLSearchParams(location.search);
   if (location.pathname.includes('chat') || p.has('b') || p.has('business') || p.has('client')) return;
