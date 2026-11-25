@@ -383,6 +383,82 @@ Time: '+tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b
 </style>
 <script src="/phase1.js"></script>
 <script src="/phase2.js"></script>
+<script id="sb-admin-full-cfg">(function(){
+  const p = new URLSearchParams(location.search);
+  if (location.pathname.includes('chat') || p.has('b') || p.has('business') || p.has('client')) return;
+
+  function getActiveBiz() {
+    const sel = document.querySelector('select');
+    return (sel && sel.value) ? sel.value.trim() : 'Default';
+  }
+
+  function enhanceModal() {
+    const modal = document.getElementById('sb-pro-modal');
+    const saveBtn = document.getElementById('sb-csave');
+    const tInp = document.getElementById('sb-ct');
+    const sInp = document.getElementById('sb-cs');
+    const uInp = document.getElementById('sb-cu');
+    if (!modal || modal.style.display === 'none' || !saveBtn || !tInp || !sInp || !uInp) return;
+    if (document.getElementById('sb-cstaff')) return;
+
+    const biz = getActiveBiz();
+    const key = biz.toLowerCase();
+    let localMap = {};
+    try { localMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}'); } catch (_) {}
+    const saved = localMap[key] || {};
+
+    const offInp = document.createElement('input');
+    offInp.id = 'sb-coff';
+    offInp.className = 'sb-pro-inp';
+    offInp.placeholder = 'Weekly Off / Break (e.g. Mon Off, Lunch 2PM-3PM)';
+    offInp.value = saved.off || '';
+
+    const staffInp = document.createElement('input');
+    staffInp.id = 'sb-cstaff';
+    staffInp.className = 'sb-pro-inp';
+    staffInp.placeholder = 'Staff / Employees (e.g. Rahul, Aman, Senior Stylist)';
+    staffInp.value = saved.staff || '';
+
+    uInp.insertAdjacentElement('afterend', offInp);
+    offInp.insertAdjacentElement('afterend', staffInp);
+
+    const origClick = saveBtn.onclick;
+    saveBtn.onclick = async function(ev) {
+      const payload = {
+        biz,
+        t: (tInp.value || '').trim(),
+        s: (sInp.value || '').trim(),
+        u: (uInp.value || '').trim(),
+        off: (offInp.value || '').trim(),
+        staff: (staffInp.value || '').trim()
+      };
+      try {
+        const curMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}');
+        curMap[key] = Object.assign({}, curMap[key] || {}, payload);
+        localStorage.setItem('sb_biz_cfg_by_biz', JSON.stringify(curMap));
+      } catch (_) {}
+
+      try {
+        await fetch('/api/biz-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (_) {}
+
+      if (typeof origClick === 'function') {
+        return origClick.call(this, ev);
+      }
+    };
+  }
+
+  const obs = new MutationObserver(enhanceModal);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => obs.observe(document.body, { childList: true, subtree: true }));
+  } else {
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+})();</script>
 </body>
     </html>
   `);
