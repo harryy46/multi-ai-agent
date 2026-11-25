@@ -79,6 +79,75 @@
     } catch (_) {}
   }
 
+  function savePhase2Booking(bizName, rec) {
+    const key = normBiz(bizName) || 'default';
+    try {
+      const map = JSON.parse(localStorage.getItem('sb_p2_bookings') || '{}');
+      if (!Array.isArray(map[key])) map[key] = [];
+      map[key].unshift(Object.assign({
+        id: rec.orderId || ('SB-' + String(Date.now()).slice(-4)),
+        biz: bizName,
+        createdAt: new Date().toLocaleString()
+      }, rec));
+      localStorage.setItem('sb_p2_bookings', JSON.stringify(map));
+    } catch (_) {}
+  }
+
+  function renderPhase2BookingsInAdmin() {
+    if (isCustPage) return;
+    const bizName = getBizKey();
+    const key = normBiz(bizName) || 'default';
+    let list = [];
+    try {
+      const map = JSON.parse(localStorage.getItem('sb_p2_bookings') || '{}');
+      list = Array.isArray(map[key]) ? map[key] : [];
+    } catch (_) {}
+
+    const searchInp = Array.from(document.querySelectorAll('input')).find(
+      i => /search|sb-id|name/i.test(i.placeholder || '')
+    );
+    const q = searchInp ? (searchInp.value || '').trim().toLowerCase() : '';
+    const filtered = q
+      ? list.filter(item =>
+          String(item.id || '').toLowerCase().includes(q) ||
+          String(item.service || '').toLowerCase().includes(q) ||
+          String(item.slot || '').toLowerCase().includes(q) ||
+          String(item.mode || '').toLowerCase().includes(q)
+        )
+      : list;
+
+    let wrap = document.getElementById('sb-p2-bookings-wrap');
+    if (!wrap) {
+      const revBar = document.getElementById('sb-p2-rev-bar');
+      if (!revBar || !revBar.parentNode) return;
+      wrap = document.createElement('div');
+      wrap.id = 'sb-p2-bookings-wrap';
+      wrap.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:8px;';
+      revBar.insertAdjacentElement('afterend', wrap);
+    }
+
+    if (!filtered.length) {
+      wrap.innerHTML = '';
+      return;
+    }
+
+    wrap.innerHTML = filtered.slice(0, 15).map(b => {
+      const tag = b.mode === 'UPI_PAID' ? 'PAID ₹' + (b.amount || 0) : 'PAY LATER ₹' + (b.amount || 0);
+      const tagColor = b.mode === 'UPI_PAID' ? '#16a34a' : '#d97706';
+      return `
+        <div style="padding:10px 12px;border-radius:10px;background:#0f172a;border:1px solid #334155;color:#f8fafc;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <b>${b.id}</b>
+            <span style="padding:2px 8px;border-radius:6px;background:${tagColor};color:#fff;font-size:10px;font-weight:800;">${tag}</span>
+          </div>
+          <div style="margin-top:4px;color:#cbd5e1;">${b.service || 'Service'} • <b>${b.slot || 'Slot'}</b></div>
+          <div style="margin-top:2px;font-size:11px;color:#94a3b8;">${b.biz} • ${b.createdAt || ''}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+
   function lockSlotForBiz(bizName, slot) {
     const key = normBiz(bizName);
     if (!key || !slot) return;
@@ -225,14 +294,9 @@
                 stEl.textContent = 'Pehle upar se koi available time slot select karein.';
                 return;
               }
-              recordPayment(bizName, {
-                orderId,
-                service: cur.service,
-                slot: cur.slot,
-                amount,
-                mode: 'UPI_PAID',
-                upiId
-              });
+              const payRec = { orderId, service: cur.service, slot: cur.slot, amount, mode: 'UPI_PAID', upiId };
+              recordPayment(bizName, payRec);
+              savePhase2Booking(bizName, payRec);
               lockSlotForBiz(bizName, cur.slot);
               stEl.style.color = '#34d399';
               stEl.textContent = 'Payment recorded (₹' + amount + ') & slot ' + cur.slot + ' locked for ' + bizName + '!';
@@ -260,13 +324,9 @@
               stEl.textContent = 'Pehle upar se koi available time slot select karein.';
               return;
             }
-            recordPayment(bizName, {
-              orderId,
-              service: cur.service,
-              slot: cur.slot,
-              amount,
-              mode: 'PAY_LATER'
-            });
+            const laterRec = { orderId, service: cur.service, slot: cur.slot, amount, mode: 'PAY_LATER' };
+              recordPayment(bizName, laterRec);
+              savePhase2Booking(bizName, laterRec);
             lockSlotForBiz(bizName, cur.slot);
             stEl.style.color = '#fbbf24';
             stEl.textContent = 'Booking noted as Pay Later (₹' + amount + ') & slot ' + cur.slot + ' locked!';
@@ -302,11 +362,11 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initCustomerPaymentBox();
-      renderAdminRevenue();
+      renderAdminRevenue(); renderPhase2BookingsInAdmin();
     });
   } else {
     initCustomerPaymentBox();
-    renderAdminRevenue();
+    renderAdminRevenue(); renderPhase2BookingsInAdmin();
   }
-  setInterval(renderAdminRevenue, 3000);
+  setInterval(() => { renderAdminRevenue(); renderPhase2BookingsInAdmin(); renderPhase2BookingsInAdmin(); }, 3000);
 })();
