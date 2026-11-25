@@ -220,11 +220,14 @@
         srvCount[s] = (srvCount[s] || 0) + 1;
       });
       const topSrv = Object.entries(srvCount).sort((a, b) => b[1] - a[1])[0];
-      ana.innerHTML =
-        '<b>Bookings:</b> ' + total +
+      const nextAnaHtml = '<b>Bookings:</b> ' + total +
         ' • <b>UPI Paid:</b> ' + paidCount +
         ' • <b>Pay Later:</b> ' + laterCount +
         (topSrv ? (' • <b>Top Service:</b> ' + topSrv[0] + ' (' + topSrv[1] + ')') : '');
+      if (ana.dataset.sig !== nextAnaHtml) {
+        ana.dataset.sig = nextAnaHtml;
+        ana.innerHTML = nextAnaHtml;
+      }
     }
 
     const cards = Array.from(document.querySelectorAll('[data-p2-id]'));
@@ -243,7 +246,7 @@
         waBtn.type = 'button';
         waBtn.setAttribute('data-p3-wa', '1');
         waBtn.textContent = 'WhatsApp';
-        waBtn.style.cssText = 'padding:5px 10px;border-radius:7px;border:none;background:#16a34a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;';
+        waBtn.style.cssText = 'display:inline-block!important;width:auto!important;padding:5px 10px!important;border-radius:7px!important;border:none!important;background:#16a34a!important;color:#fff!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;margin-right:6px!important;margin-top:6px!important;';
         waBtn.onclick = () => triggerWhatsApp('BOOKED', biz, rec, card, false);
         btnRow.appendChild(waBtn);
       }
@@ -253,7 +256,7 @@
         rcBtn.type = 'button';
         rcBtn.setAttribute('data-p3-receipt', '1');
         rcBtn.textContent = 'Receipt';
-        rcBtn.style.cssText = 'padding:5px 10px;border-radius:7px;border:none;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;cursor:pointer;';
+        rcBtn.style.cssText = 'display:inline-block!important;width:auto!important;padding:5px 10px!important;border-radius:7px!important;border:none!important;background:#4f46e5!important;color:#fff!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;margin-top:6px!important;';
         rcBtn.onclick = () => triggerWhatsApp('RECEIPT', biz, rec, card, false);
         btnRow.appendChild(rcBtn);
       }
@@ -295,5 +298,5 @@
   } else {
     setTimeout(tick, 200);
   }
-  setInterval(tick, 2500);
+  setInterval(tick, 4500);
 })();
