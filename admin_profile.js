@@ -73,19 +73,29 @@
     sel.dataset.sbDefaultApplied = '1';
   }
 
+  function findTargetAnchor() {
+    const allEls = Array.from(document.querySelectorAll('h1, h2, h3, h4, div, span'));
+    const addBizEl = allEls.find(el => {
+      const txt = (el.textContent || '').trim();
+      return /^\+?\s*Add Business$/i.test(txt) && el.children.length === 0;
+    });
+    if (addBizEl) {
+      const box = addBizEl.closest('section, form, [class*="card"], [class*="panel"], [class*="box"]') || addBizEl.parentElement;
+      if (box && box.parentNode && box !== document.body) return { parent: box.parentNode, before: box };
+    }
+    const ana = document.getElementById('sb-p3-analytics');
+    if (ana && ana.parentNode) return { parent: ana.parentNode, before: ana.nextSibling };
+
+    const mainContainer = document.querySelector('main, #root, #app, .container') || document.body;
+    return { parent: mainContainer, before: null };
+  }
+
   function renderAdminSetupSection() {
-    const oldCard = document.getElementById('sb-admin-profile-card');
-    if (oldCard && oldCard.dataset.sbSetupV2) return;
+    if (document.getElementById('sb-admin-profile-card')) return true;
+    if (!document.body) return false;
 
-    const addBizHeading = Array.from(document.querySelectorAll('h1, h2, h3, h4, div, span')).find(
-      el => /^\s*\+?\s*Add Business\s*$/i.test((el.textContent || '').trim())
-    );
-    const anchor = (addBizHeading && (addBizHeading.closest('section, form, .card, [class*="card"], [class*="panel"]') || addBizHeading.parentElement))
-      || document.getElementById('sb-p3-analytics')
-      || document.body.lastElementChild;
-
-    if (!anchor || !anchor.parentNode) return;
-    if (oldCard && oldCard.parentNode) oldCard.parentNode.removeChild(oldCard);
+    const anchor = findTargetAnchor();
+    if (!anchor || !anchor.parent) return false;
 
     const setup = loadSetup();
     const bizList = getBusinessOptions();
@@ -93,8 +103,7 @@
 
     const card = document.createElement('div');
     card.id = 'sb-admin-profile-card';
-    card.dataset.sbSetupV2 = '1';
-    card.style.cssText = 'margin:16px 0;padding:16px;border-radius:14px;background:#0f172a;border:1px solid #334155;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif;';
+    card.style.cssText = 'margin:16px 0;padding:16px;border-radius:14px;background:#0f172a;border:1px solid #334155;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif;clear:both;';
 
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
@@ -162,7 +171,7 @@
       </div>
     `;
 
-    anchor.parentNode.insertBefore(card, anchor);
+    anchor.parent.insertBefore(card, anchor.before || null);
     applyDefaultBusinessIfNeeded(setup);
 
     const statusEl = card.querySelector('#sb-prof-status');
@@ -230,12 +239,15 @@
         setStatus('Incorrect PIN!', true);
       }
     };
+
+    return true;
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(renderAdminSetupSection, 350));
-  } else {
-    setTimeout(renderAdminSetupSection, 350);
-  }
-  setTimeout(renderAdminSetupSection, 1800);
+  let attempts = 0;
+  const timer = setInterval(() => {
+    attempts++;
+    if (renderAdminSetupSection() || attempts >= 25) {
+      clearInterval(timer);
+    }
+  }, 400);
 })();
