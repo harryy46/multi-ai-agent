@@ -194,14 +194,9 @@
     bar.appendChild(left);
     bar.appendChild(toast);
 
-    const topAnchor = document.querySelector('main, #root, #app, .container');
-    if (topAnchor && topAnchor.firstElementChild && topAnchor.firstElementChild.nextElementSibling) {
-      topAnchor.insertBefore(bar, topAnchor.firstElementChild.nextElementSibling);
-    } else if (topAnchor) {
-      topAnchor.prepend(bar);
-    } else {
-      document.body.prepend(bar);
-    }
+    const topAnchor = document.querySelector('main, #root, #app, .container') || document.body;
+    topAnchor.prepend(bar);
+    console.log('[SB] Unified action bar mounted:', bar.id);
 
     document.addEventListener('change', (e) => {
       if (e.target && e.target.tagName === 'SELECT') {
