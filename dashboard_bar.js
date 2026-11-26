@@ -194,12 +194,13 @@
     bar.appendChild(left);
     bar.appendChild(toast);
 
-    const mainArea = document.querySelector('main, #root, #app, .container') || document.body;
-    const firstChild = mainArea.firstElementChild;
-    if (firstChild && firstChild.nextElementSibling) {
-      mainArea.insertBefore(bar, firstChild.nextElementSibling);
+    const topAnchor = document.querySelector('main, #root, #app, .container');
+    if (topAnchor && topAnchor.firstElementChild && topAnchor.firstElementChild.nextElementSibling) {
+      topAnchor.insertBefore(bar, topAnchor.firstElementChild.nextElementSibling);
+    } else if (topAnchor) {
+      topAnchor.prepend(bar);
     } else {
-      mainArea.prepend(bar);
+      document.body.prepend(bar);
     }
 
     document.addEventListener('change', (e) => {
