@@ -194,9 +194,15 @@
     bar.appendChild(left);
     bar.appendChild(toast);
 
-    const topAnchor = document.querySelector('main, #root, #app, .container') || document.body;
-    topAnchor.prepend(bar);
-    console.log('[SB] Unified action bar mounted:', bar.id);
+    const headerBrand = Array.from(document.querySelectorAll('div, header, nav')).find(
+      el => /Smart Booking/i.test((el.textContent || '')) && /Enterprise Booking/i.test((el.textContent || '')) && el.offsetHeight > 30 && el.offsetHeight < 140
+    );
+    if (headerBrand && headerBrand.parentNode) {
+      headerBrand.insertAdjacentElement('afterend', bar);
+    } else {
+      const target = document.querySelector('main, #root, #app, .container') || document.body;
+      target.prepend(bar);
+    }
 
     document.addEventListener('change', (e) => {
       if (e.target && e.target.tagName === 'SELECT') {
