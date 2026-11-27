@@ -23,6 +23,9 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+// Serve static files (CSS, JS, images) from /public
+app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'allow' }));
+
 app.use(express.json());
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
