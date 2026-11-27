@@ -499,83 +499,14 @@ const iv=setInterval(function(){attachOtp();if(document.getElementById("sb-otp-i
     }
     setInterval(cleanCards, 1500);
   })();</script>
-<script id='sb-layout-flow-ui'>(function(){function addCss(){if(document.getElementById('sb-lf-css'))return;const el=document.createElement('style');el.id='sb-lf-css';el.textContent='+css+';document.head.appendChild(el);}function panel(id,list){const d=document.createElement('div');d.id=id;d.className='sb-lf-panel';const r=document.createElement('div');r.className='sb-lf-row';list.forEach(function(x){const b=document.createElement('button');b.type='button';b.className='sb-lf-chip';b.textContent=x.t;b.onclick=x.fn;r.appendChild(b);});d.appendChild(r);return d;}function quickSend(txt){const i=document.getElementById('msgInput');if(!i)return;i.value=txt;i.focus();if(typeof window.sendMsg==='function')window.sendMsg();}function mount(){addCss();const vc=document.getElementById('viewChat'),va=document.getElementById('viewAdmin'),rb=document.getElementById('recordsBox'),cb=document.getElementById('chatBox');if(vc&&cb&&!document.getElementById('sb-lf-chat-btn')){const card=cb.closest('.card')||cb.parentElement;const b=document.createElement('button');b.type='button';b.id='sb-lf-chat-btn';b.className='sb-lf-btn';b.textContent='Chat & Link Flow';const p=panel('sb-lf-chat-panel',[{t:'New Booking',fn:function(){quickSend('Mujhe aaj ki booking karni hai')}},{t:'Reset Chat',fn:function(){if(typeof window.resetChat==='function')window.resetChat()}},{t:'Copy Link',fn:function(){if(typeof window.copyClientLink==='function')window.copyClientLink()}}]);b.onclick=function(){p.classList.toggle('open')};card.insertBefore(b,cb);card.insertBefore(p,cb.nextSibling)}if(rb&&!document.getElementById('sb-lf-book-btn')){const card=rb.closest('.card')||rb.parentElement;const b=document.createElement('button');b.type='button';b.id='sb-lf-book-btn';b.className='sb-lf-btn';b.textContent='Bookings Flow';const p=panel('sb-lf-book-panel',[{t:'Top',fn:function(){rb.scrollTop=0}},{t:'Latest',fn:function(){rb.scrollTop=rb.scrollHeight}},{t:'Slots Chat',fn:function(){quickSend('Booking status aur available slots batao')}}]);b.onclick=function(){p.classList.toggle('open')};card.insertBefore(b,rb);card.insertBefore(p,rb.nextSibling)}if(va&&!document.getElementById('sb-lf-admin-btn')){const b=document.createElement('button');b.type='button';b.id='sb-lf-admin-btn';b.className='sb-lf-btn';b.textContent='Admin & Business Flow';const p=panel('sb-lf-admin-panel',[{t:'Chat Tab',fn:function(){if(typeof window.switchTab==='function')window.switchTab('chat')}},{t:'Focus Field',fn:function(){const el=va.querySelector('input,select');if(el)el.focus()}}]);b.onclick=function(){p.classList.toggle('open')};va.insertBefore(b,va.firstChild.nextSibling||va.firstChild);va.insertBefore(p,b.nextSibling)}}setInterval(mount,600);document.addEventListener('DOMContentLoaded',mount)})();</script><script id="sb-layout-flow-ui">(function(){
-  function addCss(){
-    if(document.getElementById('sb-lf-style'))return;
-    const st=document.createElement('style');
-    st.id='sb-lf-style';
-    st.textContent="\n  .sb-lf-wrap{margin-top:8px}\n  .sb-lf-btn{width:100%;padding:9px 12px;border-radius:8px;border:1px solid #38bdf8;background:#0f172a;color:#38bdf8;font-weight:700;font-size:12px;cursor:pointer;text-align:left}\n  .sb-lf-btn:hover{background:#1e293b}\n  .sb-lf-sub{display:none;margin-top:6px;padding:8px;border-radius:8px;background:#020617;border:1px solid #334155}\n  .sb-lf-sub.open{display:block}\n  .sb-lf-row{display:flex;flex-wrap:wrap;gap:6px}\n  .sb-lf-chip{padding:6px 10px;border-radius:7px;border:1px solid #475569;background:#1e293b;color:#f8fafc;font-size:11px;font-weight:600;cursor:pointer}\n  .sb-lf-chip:hover{border-color:#38bdf8}\n";
-    document.head.appendChild(st);
-  }
-  function makeFlow(id,label,items){
-    const w=document.createElement('div');
-    w.id=id+'-w';
-    w.className='sb-lf-wrap';
-    const b=document.createElement('button');
-    b.type='button';
-    b.id=id+'-b';
-    b.className='sb-lf-btn';
-    b.textContent=label;
-    const sub=document.createElement('div');
-    sub.id=id+'-s';
-    sub.className='sb-lf-sub';
-    const row=document.createElement('div');
-    row.className='sb-lf-row';
-    items.forEach(function(it){
-      const c=document.createElement('button');
-      c.type='button';
-      c.className='sb-lf-chip';
-      c.textContent=it.l;
-      c.onclick=function(e){e.stopPropagation();it.f();};
-      row.appendChild(c);
-    });
-    sub.appendChild(row);
-    b.onclick=function(e){e.stopPropagation();sub.classList.toggle('open');};
-    w.appendChild(b);
-    w.appendChild(sub);
-    return w;
-  }
-  function sendQ(t){
-    const i=document.getElementById('msgInput');
-    if(!i)return;
-    i.value=t;
-    i.focus();
-    if(typeof window.sendMsg==='function')window.sendMsg();
-  }
-  function run(){
-    addCss();
-    document.querySelectorAll('.card').forEach(function(card,idx){
-      if(card.querySelector('.sb-lf-wrap'))return;
-      const rb=card.querySelector('#recordsBox');
-      const cb=card.querySelector('#chatBox');
-      const ad=card.id==='viewAdmin'||card.querySelector('#bName')!==null;
-      if(cb){
-        card.appendChild(makeFlow('sb-lf-c'+idx,'Chat & Link Flow',[
-          {l:'New Booking',f:function(){sendQ('Mujhe aaj ki booking karni hai');}},
-          {l:'Reset Chat',f:function(){if(typeof window.resetChat==='function')window.resetChat();}},
-          {l:'Copy Link',f:function(){if(typeof window.copyClientLink==='function')window.copyClientLink();}}
-        ]));
-      }else if(rb){
-        card.appendChild(makeFlow('sb-lf-b'+idx,'Bookings Flow',[
-          {l:'Top',f:function(){rb.scrollTop=0;}},
-          {l:'Latest',f:function(){rb.scrollTop=rb.scrollHeight;}},
-          {l:'Slots Chat',f:function(){sendQ('Booking status aur available slots batao');}}
-        ]));
-      }else if(ad){
-        card.appendChild(makeFlow('sb-lf-a'+idx,'Admin & Business Flow',[
-          {l:'Chat Tab',f:function(){if(typeof window.switchTab==='function')window.switchTab('chat');}},
-          {l:'Focus Name',f:function(){const el=document.getElementById('bName')||card.querySelector('input,select,textarea');if(el)el.focus();}}
-        ]));
-      }else{
-        card.appendChild(makeFlow('sb-lf-x'+idx,'Section Flow',[
-          {l:'Open Chat',f:function(){if(typeof window.switchTab==='function')window.switchTab('chat');}},
-          {l:'Slots Info',f:function(){sendQ('Aaj ke available slots batao');}}
-        ]));
-      }
+<script id='sb-layout-flow-ui'>(function(){function addCss(){if(document.getElementById('sb-lf-css'))return;const el=document.createElement('style');el.id='sb-lf-css';el.textContent='+css+';document.head.appendChild(el);}function panel(id,list){const d=document.createElement('div');d.id=id;d.className='sb-lf-panel';const r=document.createElement('div');r.className='sb-lf-row';list.forEach(function(x){const b=document.createElement('button');b.type='button';b.className='sb-lf-chip';b.textContent=x.t;b.onclick=x.fn;r.appendChild(b);});d.appendChild(r);return d;}function quickSend(txt){const i=document.getElementById('msgInput');if(!i)return;i.value=txt;i.focus();if(typeof window.sendMsg==='function')window.sendMsg();}function mount(){addCss();const vc=document.getElementById('viewChat'),va=document.getElementById('viewAdmin'),rb=document.getElementById('recordsBox'),cb=document.getElementById('chatBox');if(vc&&cb&&!document.getElementById('sb-lf-chat-btn')){const card=cb.closest('.card')||cb.parentElement;const b=document.createElement('button');b.type='button';b.id='sb-lf-chat-btn';b.className='sb-lf-btn';b.textContent='Chat & Link Flow';const p=panel('sb-lf-chat-panel',[{t:'New Booking',fn:function(){quickSend('Mujhe aaj ki booking karni hai')}},{t:'Reset Chat',fn:function(){if(typeof window.resetChat==='function')window.resetChat()}},{t:'Copy Link',fn:function(){if(typeof window.copyClientLink==='function')window.copyClientLink()}}]);b.onclick=function(){p.classList.toggle('open')};card.insertBefore(b,cb);card.insertBefore(p,cb.nextSibling)}if(rb&&!document.getElementById('sb-lf-book-btn')){const card=rb.closest('.card')||rb.parentElement;const b=document.createElement('button');b.type='button';b.id='sb-lf-book-btn';b.className='sb-lf-btn';b.textContent='Bookings Flow';const p=panel('sb-lf-book-panel',[{t:'Top',fn:function(){rb.scrollTop=0}},{t:'Latest',fn:function(){rb.scrollTop=rb.scrollHeight}},{t:'Slots Chat',fn:function(){quickSend('Booking status aur available slots batao')}}]);b.onclick=function(){p.classList.toggle('open')};card.insertBefore(b,rb);card.insertBefore(p,rb.nextSibling)}if(va&&!document.getElementById('sb-lf-admin-btn')){const b=document.createElement('button');b.type='button';b.id='sb-lf-admin-btn';b.className='sb-lf-btn';b.textContent='Admin & Business Flow';const p=panel('sb-lf-admin-panel',[{t:'Chat Tab',fn:function(){if(typeof window.switchTab==='function')window.switchTab('chat')}},{t:'Focus Field',fn:function(){const el=va.querySelector('input,select');if(el)el.focus()}}]);b.onclick=function(){p.classList.toggle('open')};va.insertBefore(b,va.firstChild.nextSibling||va.firstChild);va.insertBefore(p,b.nextSibling)}}setInterval(mount,600);document.addEventListener('DOMContentLoaded',mount)})();</script><script id="sb-clean-flow-ui">(function(){
+  function clean(){
+    document.querySelectorAll('.sb-lf-wrap, .sb-lf-btn, .sb-lf-panel, .sb-lf-sub, #sb-lf-style, #sb-lf-css').forEach(function(el){
+      el.remove();
     });
   }
-  setInterval(run,600);
-  document.addEventListener('DOMContentLoaded',run);
+  clean();
+  setInterval(clean, 500);
 })();</script></body>
     </html>
   `);
