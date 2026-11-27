@@ -201,6 +201,51 @@ app.get('/', (req, res) => {
         .record { background: #0f172a; padding: 10px; border-left: 4px solid #10b981; margin-bottom: 8px; border-radius: 6px; font-size: 13px; }
         .hidden { display: none; }
         label { font-size: 13px; color: #94a3b8; display: block; margin-top: 10px; }
+
+        /* Accordion / Collapsible Sections */
+        .accordion-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px 16px;
+          background: #0f172a;
+          border: 1px solid #334155;
+          border-radius: 10px;
+          color: #f8fafc;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .accordion-btn:hover { background: #151d30; border-color: #475569; }
+        .accordion-btn:focus { outline: 2px solid #2563eb; outline-offset: -2px; }
+        .accordion-btn .accordion-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 20px;
+          height: 20px;
+          flex-shrink: 0;
+          transition: transform 0.2s ease;
+          color: #94a3b8;
+        }
+        .accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
+        .accordion-content {
+          overflow: hidden;
+          transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+          max-height: 0;
+          opacity: 0;
+          padding: 0 16px;
+        }
+        .accordion-content.open {
+          max-height: 2000px; /* large enough for content */
+          opacity: 1;
+          padding: 12px 16px;
+        }
+        .accordion-content .card { margin-top: 0; }
       </style>
     <style id="sb-mobile-css">*{box-sizing:border-box;}html,body{max-width:100vw;overflow-x:hidden;}@media(max-width:768px){body{padding:10px!important;font-size:14px!important;}header,main,section,div,form{max-width:100%!important;}[style*="grid-template-columns"],.grid,.row{grid-template-columns:1fr!important;}input,select,textarea,button{width:100%!important;font-size:15px!important;padding:12px!important;}}</style>
 </head>
@@ -216,42 +261,68 @@ app.get('/', (req, res) => {
 
         <!-- TAB 1: CHAT & BOOKINGS -->
         <div id="viewChat" class="grid">
-          <div class="card">
-            <label style="margin-top:0;"><b>Select Active Business:</b></label>
-            <select id="bizSelect" onchange="resetChat()"></select><button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
-            <div id="chatBox"></div>
-            <div style="display: flex; gap: 8px;">
-              <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
-              <button class="primary" id="sendBtn" onclick="sendMsg()" style="width: 90px; margin-top:0;">Send</button>
+          <!-- Section 1: Business Selector & Chat -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-chat-panel" onclick="toggleAccordion('acc-chat-panel', this)">
+              <span>💬 Chat & Business Selector</span>
+              <span class="accordion-icon">▼</span>
+            </button>
+            <div id="acc-chat-panel" class="accordion-content">
+              <div class="card">
+                <label style="margin-top:0;"><b>Select Active Business:</b></label>
+                <select id="bizSelect" onchange="resetChat()"></select>
+                <button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
+                <div id="chatBox"></div>
+                <div style="display: flex; gap: 8px;">
+                  <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
+                  <button class="primary" id="sendBtn" onclick="sendMsg()" style="width: 90px; margin-top:0;">Send</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: Saved Bookings & Orders -->
+            <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-bookings-panel" onclick="toggleAccordion('acc-bookings-panel', this)">
+              <span>📋 Saved Bookings & Orders</span>
+              <span class="accordion-icon">▼</span>
+            </button>
+            <div id="acc-bookings-panel" class="accordion-content">
+              <div class="card">
+                <h3 style="margin-top:0;">Saved Bookings & Orders</h3>
+                <p style="font-size: 12px; color: #94a3b8;">Permanent Database (database.json) me safe:</p>
+                <div id="recordsBox" style="max-height: 390px; overflow-y: auto;"></div>
+              </div>
             </div>
           </div>
 
-          <div class="card">
-            <h3 style="margin-top:0;">Saved Bookings & Orders</h3>
-            <p style="font-size: 12px; color: #94a3b8;">Permanent Database (database.json) me safe:</p>
-            <div id="recordsBox" style="max-height: 390px; overflow-y: auto;"></div>
-          </div>
         </div>
 
         <!-- TAB 2: ADMIN PANEL -->
-        <div id="viewAdmin" class="card hidden" style="max-width: 600px; margin: 0 auto;">
-          <h3 style="margin-top:0;">Naya Business AI Agent Banayein</h3>
-          <p style="font-size: 13px; color: #94a3b8;">Kisi bhi client ka business details daalein, AI turant uske liye train ho jayega:</p>
-          
-          <label>Business Name (e.g., Royal Men's Salon / FitZone Gym)</label>
-          <input id="bName" placeholder="Business ka naam likhein...">
+        <div id="viewAdmin" class="hidden" style="max-width: 600px; margin: 0 auto;">
+          <button type="button" class="accordion-btn" aria-expanded="true" aria-controls="acc-admin-panel" onclick="toggleAccordion('acc-admin-panel', this)">
+            <span>➕ Add Business (Admin Panel)</span>
+            <span class="accordion-icon">▼</span>
+          </button>
+          <div id="acc-admin-panel" class="accordion-content open">
+            <div class="card">
+              <h3 style="margin-top:0;">Naya Business AI Agent Banayein</h3>
+              <p style="font-size: 13px; color: #94a3b8;">Kisi bhi client ka business details daalein, AI turant uske liye train ho jayega:</p>
+              
+              <label>Business Name (e.g., Royal Men's Salon / FitZone Gym)</label>
+              <input id="bName" placeholder="Business ka naam likhein...">
 
-          <label>Category / Type (e.g., Salon, Gym, Coaching, Real Estate)</label>
-          <input id="bType" placeholder="Business category likhein...">
+              <label>Category / Type (e.g., Salon, Gym, Coaching, Real Estate)</label>
+              <input id="bType" placeholder="Business category likhein...">
 
-          <label>Services, Pricing, Timings & Address</label>
-          <textarea id="bDetails" rows="4" placeholder="Jaise: Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
+              <label>Services, Pricing, Timings & Address</label>
+              <textarea id="bDetails" rows="4" placeholder="Jaise: Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
 
-          <label>AI Behavior / Custom Rules (Optional)</label>
-          <textarea id="bInst" rows="2" placeholder="Jaise: Polite Hinglish me baat karein, service aur time confirm karke booking save karein."></textarea>
+              <label>AI Behavior / Custom Rules (Optional)</label>
+              <textarea id="bInst" rows="2" placeholder="Jaise: Polite Hinglish me baat karein, service aur time confirm karke booking save karein."></textarea>
 
-          <button class="primary" onclick="addBusiness()" style="margin-top: 16px;">Save & Launch AI Agent</button>
-          <p id="adminMsg" style="font-size: 13px; color: #10b981; margin-top: 10px;"></p>
+              <button class="primary" onclick="addBusiness()" style="margin-top: 16px;">Save & Launch AI Agent</button>
+              <p id="adminMsg" style="font-size: 13px; color: #10b981; margin-top: 10px;"></p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -264,6 +335,13 @@ app.get('/', (req, res) => {
           document.getElementById('viewAdmin').classList.toggle('hidden', tab !== 'admin');
           document.getElementById('tabChat').classList.toggle('active', tab === 'chat');
           document.getElementById('tabAdmin').classList.toggle('active', tab === 'admin');
+        }
+
+        // Accordion toggle function
+        function toggleAccordion(panelId, btn) {
+          const panel = document.getElementById(panelId);
+          const isOpen = panel.classList.toggle('open');
+          btn.setAttribute('aria-expanded', String(isOpen));
         }
 
         function renderRecords(records) {
