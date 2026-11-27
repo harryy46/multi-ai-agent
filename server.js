@@ -505,13 +505,13 @@ const iv=setInterval(function(){attachOtp();if(document.getElementById("sb-otp-i
 });
 
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
+app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
+app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
+app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', () =;"); });
+app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
 
 
 let _col;
