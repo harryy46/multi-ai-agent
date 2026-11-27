@@ -3,6 +3,9 @@ import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 const app = express();
@@ -14,6 +17,11 @@ app.get('/admin_profile.js', (req, res) => res.type('application/javascript').se
 
 
 app.get('/.well-known/assetlinks.json',(req,res)=>{res.type('application/json').send("[{\n      \"relation\": [\"delegate_permission/common.handle_all_urls\"],\n      \"target\": {\n        \"namespace\": \"android_app\",\n        \"package_name\": \"com.smartbooking.app\",\n        \"sha256_cert_fingerprints\": [\"36:13:B7:9E:AC:21:CD:E5:C7:A8:A5:69:11:EA:A0:32:B8:7F:16:90:70:FF:A7:EB:66:52:CF:89:25:3E:52:42\"]\n      }\n    }]\n");});
+
+// Serve the modular dashboard at /dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 app.use(express.json());
 

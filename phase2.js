@@ -163,7 +163,6 @@
   }
 
   function renderPhase2BookingsInAdmin() {
-    const existingWrap = document.getElementById('sb-p2-bookings-wrap');
     if (existingWrap) sanitizePhase2CardButtons(existingWrap, getBizKey());
     if (isCustPage) return;
     const bizName = getBizKey();
@@ -202,6 +201,7 @@
       return;
     }
 
+    wrap.dataset.sig = sig;
     wrap.innerHTML = filtered.slice(0, 15).map(b => {
       const stLabel = (b.status || 'PENDING').toUpperCase();
       const tag = b.mode === 'UPI_PAID' ? 'PAID ₹' + (b.amount || 0) : 'PAY LATER ₹' + (b.amount || 0);
@@ -218,10 +218,12 @@
           </div>
           <div style="margin-top:4px;color:#cbd5e1;">${b.service || 'Service'} • <b>${b.slot || 'Slot'}</b></div>
           <div style="margin-top:2px;font-size:11px;color:#94a3b8;">${b.biz} • ${b.createdAt || ''}</div>
-          <div data-p2-btns="1" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <div data-p2-btns="1" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;">
             <button type="button" data-p2-act="CONFIRMED" style="padding:5px 10px;border-radius:7px;border:none;background:#22c55e;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Confirm</button>
             <button type="button" data-p2-act="COMPLETED" style="padding:5px 10px;border-radius:7px;border:none;background:#2563eb;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Complete</button>
             <button type="button" data-p2-act="CANCELLED" style="padding:5px 10px;border-radius:7px;border:none;background:#dc2626;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
+            <button type="button" data-p2-wa="1" style="padding:5px 10px;border-radius:7px;border:none;background:#16a34a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">WhatsApp</button>
+            <button type="button" data-p2-rc="1" style="padding:5px 10px;border-radius:7px;border:none;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Receipt</button>
           </div>
         </div>
       `;
@@ -480,5 +482,5 @@
     initCustomerPaymentBox();
     renderAdminRevenue(); renderPhase2BookingsInAdmin();
   }
-  setInterval(() => { renderAdminRevenue(); renderPhase2BookingsInAdmin(); renderPhase2BookingsInAdmin(); }, 3000);
+  setInterval(() => { renderAdminRevenue(); renderPhase2BookingsInAdmin(); renderPhase2BookingsInAdmin(); }, 10000);
 })();

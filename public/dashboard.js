@@ -6,6 +6,13 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 let biz = null;
 let current = todayIST();
 
+/* ---------- Accordion Toggle ---------- */
+function toggleAccordion(panelId, btn) {
+  const panel = $(panelId);
+  const isOpen = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(isOpen));
+}
+
 /* ---------- Header + share link ---------- */
 async function init() {
   biz = await api('/my/business', { auth: true });
@@ -115,8 +122,11 @@ async function loadSlots() {
 }
 
 $('addBtn').onclick = () => {
-  $('addForm').classList.toggle('hidden');
-  if (!$('addForm').classList.contains('hidden')) {
+  const panel = $('acc-addform');
+  const btn = document.querySelector('[aria-controls="acc-addform"]');
+  const isOpen = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) {
     $('aDate').value = current < todayIST() ? todayIST() : current;
     $('aDate').min = todayIST();
     loadSlots();
@@ -137,7 +147,11 @@ $('addForm').addEventListener('submit', async (e) => {
     $('aName').value = '';
     $('aPhone').value = '';
     current = r.booking.date;
-    $('addForm').classList.add('hidden');
+    // Close the accordion
+    const panel = $('acc-addform');
+    const btn = document.querySelector('[aria-controls="acc-addform"]');
+    panel.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
     loadDay();
   } catch (err) {
     $('aErr').textContent = err.message;

@@ -241,35 +241,16 @@
         );
       const btnRow = actBtn ? actBtn.parentElement : null;
 
-      if (btnRow && !btnRow.querySelector('[data-p3-wa]')) {
-        const waBtn = document.createElement('button');
-        waBtn.type = 'button';
-        waBtn.setAttribute('data-p3-wa', '1');
-        waBtn.textContent = 'WhatsApp';
-        waBtn.style.cssText = 'display:inline-block!important;width:auto!important;padding:5px 10px!important;border-radius:7px!important;border:none!important;background:#16a34a!important;color:#fff!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;margin-right:6px!important;margin-top:6px!important;';
+      const waBtn = card.querySelector('[data-p2-wa="1"]');
+      if (waBtn && !waBtn.dataset.p3Bound) {
+        waBtn.dataset.p3Bound = '1';
         waBtn.onclick = () => triggerWhatsApp('BOOKED', biz, rec, card, false);
-        btnRow.appendChild(waBtn);
       }
 
-      if (btnRow && !btnRow.querySelector('[data-p3-receipt]')) {
-        const rcBtn = document.createElement('button');
-        rcBtn.type = 'button';
-        rcBtn.setAttribute('data-p3-receipt', '1');
-        rcBtn.textContent = 'Receipt';
-        rcBtn.style.cssText = 'display:inline-block!important;width:auto!important;padding:5px 10px!important;border-radius:7px!important;border:none!important;background:#4f46e5!important;color:#fff!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;margin-top:6px!important;';
+      const rcBtn = card.querySelector('[data-p2-rc="1"]');
+      if (rcBtn && !rcBtn.dataset.p3Bound) {
+        rcBtn.dataset.p3Bound = '1';
         rcBtn.onclick = () => triggerWhatsApp('RECEIPT', biz, rec, card, false);
-        btnRow.appendChild(rcBtn);
-      }
-
-      ['CONFIRMED', 'COMPLETED'].forEach(actName => {
-        const stBtn = card.querySelector('button[data-p2-act="' + actName + '"]');
-        if (stBtn && !stBtn.dataset.p3WaBound) {
-          stBtn.dataset.p3WaBound = '1';
-          stBtn.addEventListener('click', () => {
-            const updated = Object.assign({}, rec, { status: actName });
-            triggerWhatsApp(actName, biz, updated, card, false);
-          });
-        }
       });
 
       const cancelBtn = card.querySelector('button[data-p2-act="CANCELLED"]');
@@ -298,5 +279,5 @@
   } else {
     setTimeout(tick, 200);
   }
-  setInterval(tick, 4500);
+  setInterval(tick, 10000);
 })();

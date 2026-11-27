@@ -131,3 +131,50 @@ textarea { min-height: 96px; resize: vertical; }
   .svcrow .name { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+/* Accordion / Collapsible Sections */
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--body);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  margin-bottom: 8px;
+}
+.accordion-btn:hover { background: var(--tint); border-color: var(--peacock); }
+.accordion-btn:focus { outline: 3px solid var(--haldi); outline-offset: 2px; }
+.accordion-btn .accordion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--muted);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+  max-height: 0;
+  opacity: 0;
+  padding: 0 16px;
+}
+.accordion-content.open {
+  max-height: 5000px;
+  opacity: 1;
+  padding: 8px 16px 16px;
+}
+.accordion-content .card { margin-top: 0; margin-bottom: 12px; }
