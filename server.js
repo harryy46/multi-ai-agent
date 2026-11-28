@@ -5,10 +5,27 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 const app = express();
+app.set('trust proxy', 1);
+
+// JWT Configuration
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production-min-32-chars';
+const JWT_EXPIRES_IN = '7d';
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000
+};
+
 app.get('/phase1.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase1.js', import.meta.url), 'utf8')));
 app.get('/phase2.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase2.js', import.meta.url), 'utf8')));
 app.get('/phase3.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase3.js', import.meta.url), 'utf8')));
@@ -24,6 +41,7 @@ app.get('/dashboard', (req, res) => {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const DB_FILE = './database.json';
@@ -57,7 +75,8 @@ const defaultData = {
       instructions: "Aap ek helpful e-commerce support executive hain. Hinglish me baat karein. Customers ko jewelry recommend karein, policies batayein, aur order book ya track karne me madad karein."
     }
   },
-  records: []
+  records: [],
+  users: []
 };
 
 // Database Load & Save Functions (Permanent Storage)
@@ -71,6 +90,77 @@ function loadDB() {
 
 function saveDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+// User Authentication Helpers
+function findUserByEmail(email) {
+  const db = loadDB();
+  return db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+}
+
+function findUserById(id) {
+  const db = loadDB();
+  return db.users.find(u => u.id === id);
+}
+
+async function createUser(userData) {
+  const db = loadDB();
+  const hashedPassword = await bcrypt.hash(userData.password, 10);
+  const newUser = {
+    id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    email: userData.email.toLowerCase(),
+    password: hashedPassword,
+    businessName: userData.businessName || '',
+    createdAt: new Date().toISOString()
+  };
+  db.users.push(newUser);
+  saveDB(db);
+  return newUser;
+}
+
+function generateToken(user) {
+  return jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (e) {
+    return null;
+  }
+}
+
+function requireAuth(req, res, next) {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+  const user = findUserById(decoded.userId);
+  if (!user) {
+    return res.status(401).json({ error: 'User not found' });
+  }
+  req.user = user;
+  next();
+}
+
+function optionalAuth(req, res, next) {
+  const token = req.cookies?.token;
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      const user = findUserById(decoded.userId);
+      if (user) req.user = user;
+    }
+  }
+  next();
 }
 
 const saveRecordTool = {
@@ -103,6 +193,85 @@ async function callGeminiWithFallback(contents, systemPrompt, useTools = true) {
   }
   throw lastError;
 }
+
+// ============ AUTHENTICATION ROUTES ============
+
+// Sign Up
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { businessName, email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    const existingUser = findUserByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+    
+    const user = await createUser({ businessName: businessName || '', email, password });
+    const token = generateToken(user);
+    
+    res.cookie('token', token, cookieOptions);
+    res.json({ 
+      success: true, 
+      user: { id: user.id, email: user.email, businessName: user.businessName }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    const user = findUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    const token = generateToken(user);
+    res.cookie('token', token, cookieOptions);
+    res.json({ 
+      success: true, 
+      user: { id: user.id, email: user.email, businessName: user.businessName }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Logout
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('token', { ...cookieOptions, maxAge: 0 });
+  res.json({ success: true });
+});
+
+// Get current user
+app.get('/api/auth/me', optionalAuth, (req, res) => {
+  if (req.user) {
+    res.json({ 
+      user: { id: req.user.id, email: req.user.email, businessName: req.user.businessName }
+    });
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
 
 // API: Saare businesses aur saved bookings fetch karne ke liye
 app.get('/api/data', (req, res) => {
@@ -178,9 +347,11 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// FRONTEND UI — Dark Smart Booking Dashboard (single-file, server.js)
-app.get('/', (req, res) => {
-  res.send(`
+// FRONTEND UI — Dark Smart Booking Dashboard with Auth Gate (single-file, server.js)
+app.get('/', optionalAuth, (req, res) => {
+  // If user is logged in, show dashboard; otherwise show login page
+  if (req.user) {
+    res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -294,16 +465,6 @@ app.get('/', (req, res) => {
   <style id="sb-mobile-css">*{box-sizing:border-box;}html,body{max-width:100vw;overflow-x:hidden;}@media(max-width:768px){body{padding:10px!important;font-size:14px!important;}header,main,section,div,form{max-width:100%!important;}[style*="grid-template-columns"],.grid,.row{grid-template-columns:1fr!important;}input,select,textarea,button{width:100%!important;font-size:15px!important;padding:12px!important;}}</style>
 </head>
 <body>
-  <div id="adminLockModal" style="display:none;position:fixed;inset:0;background:#020617;z-index:9999;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#0f172a;border:1px solid #1e293b;padding:24px;border-radius:14px;max-width:360px;width:100%;text-align:center;color:#f8fafc;">
-      <h2 style="margin:0 0 8px 0;">🔐 SaaS Admin Login</h2>
-      <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Dashboard & Bookings access karne ke liye Admin PIN daalein</p>
-      <input id="adminPinInput" type="password" inputmode="numeric" placeholder="Enter Admin PIN" style="width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;text-align:center;font-size:18px;letter-spacing:4px;margin-bottom:12px;">
-      <button onclick="unlockAdmin()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Unlock Dashboard</button>
-      <p id="pinErr" style="color:#f87171;font-size:12px;margin-top:10px;"></p>
-    </div>
-  </div>
-
   <div class="container">
     <div class="header">
       <div>
@@ -311,8 +472,9 @@ app.get('/', (req, res) => {
         <div class="subtitle">Enterprise Booking & Support SaaS — Dark Dashboard</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11px;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px;">● Cloud Synced</span>
-        <button type="button" onclick="location.reload()" style="padding:6px 10px;background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);font-size:12px;border-radius:8px;cursor:pointer;">Refresh</button>
+        <span style="font-size:11px;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px;">• Cloud Synced</span>
+        <span style="font-size:13px;color:#94a3b8;">Welcome, ${req.user.email}</span>
+        <button type="button" onclick="logout()" style="padding:6px 10px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Logout</button>
       </div>
     </div>
 
@@ -472,7 +634,6 @@ app.get('/', (req, res) => {
     let allBusinesses = {};
     let currentBookingFilter = 'all';
 
-    // Accordion toggle - attached via event delegation
     function toggleAccordion(panelId, btn) {
       const panel = document.getElementById(panelId);
       if (!panel) return;
@@ -480,7 +641,6 @@ app.get('/', (req, res) => {
       btn.setAttribute('aria-expanded', String(isOpen));
     }
 
-    // Initialize accordion event delegation
     document.addEventListener('DOMContentLoaded', function() {
       document.body.addEventListener('click', function(e) {
         const btn = e.target.closest('.accordion-btn[data-target]');
@@ -491,7 +651,15 @@ app.get('/', (req, res) => {
       });
     });
 
-    // Stats
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        window.location.reload();
+      } catch (e) {
+        window.location.reload();
+      }
+    }
+
     async function loadStats() {
       try {
         const res = await fetch('/api/data');
@@ -501,7 +669,6 @@ app.get('/', (req, res) => {
       } catch (e) { console.error('stats load failed', e); }
     }
 
-    // Business dropdown
     function populateDropdown(businesses, selectId) {
       allBusinesses = businesses;
       const sel = document.getElementById(selectId || 'bizSelect');
@@ -511,7 +678,6 @@ app.get('/', (req, res) => {
       ).join('');
       if (currentVal && businesses[currentVal]) sel.value = currentVal;
 
-      // Also populate setup default biz
       const setupSel = document.getElementById('setupDefaultBiz');
       if (setupSel) {
         setupSel.innerHTML = Object.entries(businesses).map(([id, b]) =>
@@ -546,7 +712,6 @@ app.get('/', (req, res) => {
       } else { prompt('Copy link:', url); }
     }
 
-    // Chat
     async function sendMsg() {
       const input = document.getElementById('msgInput');
       const btn = document.getElementById('sendBtn');
@@ -585,7 +750,6 @@ app.get('/', (req, res) => {
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Bookings rendering + filtering
     function renderRecords(records) {
       const box = document.getElementById('recordsBox');
       if (!records || records.length === 0) {
@@ -627,7 +791,7 @@ app.get('/', (req, res) => {
 
     function filterBookings() {
       const q = document.getElementById('bkSearch').value.toLowerCase();
-      const rows = document.queryencerAll('#recordsBox .record');
+      const rows = document.querySelectorAll('#recordsBox .record');
       rows.forEach(row => {
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(q) ? '' : 'none';
@@ -642,7 +806,6 @@ app.get('/', (req, res) => {
       renderRecords(window.__lastRecords || []);
     }
 
-    // Store records globally for filtering
     const originalRender = renderRecords;
     renderRecords = function(records) {
       window.__lastRecords = records;
@@ -674,7 +837,6 @@ app.get('/', (req, res) => {
       win.document.write('<html><head><title>Receipt ' + id + '</title><style>body{font-family:sans-serif;padding:20px;background:#0b1120;color:#f8fafc}.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;max-width:400px;margin:0 auto}</style></head><body><div class="card"><h2>Booking Receipt</h2><p><b>ID:</b> ' + id + '</p><p><b>Business:</b> ' + biz + '</p><p><b>Customer:</b> ' + name + ' (' + phone + ')</p><p><b>Type:</b> ' + type + '</p><p><b>Details:</b> ' + details + '</p><p class="muted">Smart Booking SaaS</p></div></body></html>');
     }
 
-    // Add Business
     async function addBusiness() {
       const name = document.getElementById('bName').value.trim();
       const type = document.getElementById('bType').value.trim();
@@ -700,7 +862,6 @@ app.get('/', (req, res) => {
       }
     }
 
-    // Admin Setup
     const SETUP_KEY = 'sb_admin_setup_v1';
     function loadAdminSetup() {
       try {
@@ -758,34 +919,210 @@ app.get('/', (req, res) => {
       setTimeout(() => el.textContent = '', 2000);
     }
 
-    // Admin PIN lock
-    const DEFAULT_PIN = '4646';
-    function checkAdminAuth() {
-      const p = new URLSearchParams(window.location.search).get('b');
-      if (p) return;
-      const saved = localStorage.getItem('saas_admin_pin');
-      if (saved !== DEFAULT_PIN) {
-        document.getElementById('adminLockModal').style.display = 'flex';
-      }
-    }
-    function unlockAdmin() {
-      const val = document.getElementById('adminPinInput').value.trim();
-      if (val === DEFAULT_PIN) {
-        localStorage.setItem('saas_admin_pin', val);
-        document.getElementById('adminLockModal').style.display = 'none';
-      } else {
-        document.getElementById('pinErr').innerText = 'Galat PIN! Dobara koshish karein.';
-      }
+    function toggleAccordion(panelId, btn) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isOpen = panel.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
     }
 
-    // Init
-    checkAdminAuth();
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.addEventListener('click', function(e) {
+        const btn = e.target.closest('.accordion-btn[data-target]');
+        if (btn) {
+          const targetId = btn.getAttribute('data-target');
+          toggleAccordion(targetId, btn);
+        }
+      });
+    });
+
     init();
   </script>
 </body>
 </html>
 `);
+  } else {
+    // Not logged in - show login page
+    res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Booking — Sign In</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #f8fafc; margin: 0; padding: 16px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-container { width: 100%; max-width: 420px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; }
+    .login-header { text-align: center; margin-bottom: 28px; }
+    .login-header .logo { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+    .login-header .subtitle { color: #94a3b8; font-size: 14px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #0f172a; padding: 4px; border-radius: 10px; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #94a3b8; font-weight: 600; font-size: 14px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { background: #2563eb; color: #fff; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+    input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; font-size: 15px; }
+    input:focus { outline: 2px solid #2563eb; outline-offset: -2px; border-color: #2563eb; }
+    .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-ghost { background: transparent; border: 1px solid #334155; color: #cbd5e1; }
+    .btn-ghost:hover { background: #1e293b; border-color: #64748b; }
+    .error { color: #f87171; font-size: 13px; margin-bottom: 12px; min-height: 18px; text-align: center; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #64748b; font-size: 13px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #334155; }
+    .footer-text { text-align: center; color: #64748b; font-size: 13px; margin-top: 20px; }
+    .hidden { display: none !important; }
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .login-container { padding: 24px; border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <div class="logo">Smart Booking</div>
+      <div class="subtitle">Enterprise Booking & Support SaaS</div>
+    </div>
+    
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" class="tab-btn active" id="tabLogin" aria-selected="true" onclick="switchTab('login')">Login</button>
+      <button type="button" role="tab" class="tab-btn" id="tabSignup" aria-selected="false" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <form id="formLogin" novalidate>
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" autocomplete="email" required placeholder="you@domain.com">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+
+    <form id="formSignup" class="hidden" novalidate>
+      <div class="form-group">
+        <label for="signupBusinessName">Business Name (optional)</label>
+        <input type="text" id="signupBusinessName" autocomplete="organization" placeholder="e.g., Royal Salon">
+      </div>
+      <div class="form-group">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" autocomplete="email" required placeholder="you@domain.com">
+      </div>
+      <div class="form-group">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" autocomplete="new-password" required minlength="6" placeholder="Min. 6 characters">
+      </div>
+      <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+
+    <div class="divider">or</div>
+    <button type="button" class="btn btn-ghost" onclick="location.href='/'">Continue as Guest (View Demo)</button>
+
+    <div class="footer-text">
+      Smart Booking — AI Appointment & Business SaaS
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('formLogin').classList.toggle('hidden', !isLogin);
+      document.getElementById('formSignup').classList.toggle('hidden', isLogin);
+      document.getElementById('tabLogin').classList.toggle('active', isLogin);
+      document.getElementById('tabSignup').classList.toggle('active', !isLogin);
+      document.getElementById('tabLogin').setAttribute('aria-selected', String(isLogin));
+      document.getElementById('tabSignup').setAttribute('aria-selected', String(!isLogin));
+      document.getElementById('errorMsg').textContent = '';
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMsg').textContent = msg;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      showError('');
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.reload();
+        } else {
+          showError(data.error || 'Login failed');
+        }
+      } catch (err) {
+        showError('Network error. Please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      showError('');
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            businessName: document.getElementById('signupBusinessName').value,
+            email: document.getElementById('signupEmail').value,
+            password: document.getElementById('signupPassword').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.reload();
+        } else {
+          showError(data.error || 'Sign up failed');
+        }
+      } catch (err) {
+        showError('Network error. Please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    document.getElementById('formLogin').addEventListener('submit', handleLogin);
+    document.getElementById('formSignup').addEventListener('submit', handleSignup);
+  </script>
+</body>
+</html>
+`);
+  }
 });
+;
 ;
 
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
