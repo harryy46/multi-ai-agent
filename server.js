@@ -644,16 +644,17 @@ function generateDashboard(user) {
       if (!panel) return;
       const isOpen = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', String(isOpen));
+      // Force display override to ensure visibility regardless of CSS
+      panel.style.display = isOpen ? 'block' : 'none';
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      document.body.addEventListener('click', function(e) {
-        const btn = e.target.closest('.accordion-btn[data-target]');
-        if (btn) {
-          const targetId = btn.getAttribute('data-target');
-          toggleAccordion(targetId, btn);
-        }
-      });
+    // Attach click handler immediately (not waiting for DOMContentLoaded)
+    document.body.addEventListener('click', function(e) {
+      const btn = e.target.closest('.accordion-btn[data-target]');
+      if (btn) {
+        const targetId = btn.getAttribute('data-target');
+        toggleAccordion(targetId, btn);
+      }
     });
 
     async function logout() {
@@ -930,16 +931,6 @@ function generateDashboard(user) {
       const isOpen = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', String(isOpen));
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      document.body.addEventListener('click', function(e) {
-        const btn = e.target.closest('.accordion-btn[data-target]');
-        if (btn) {
-          const targetId = btn.getAttribute('data-target');
-          toggleAccordion(targetId, btn);
-        }
-      });
-    });
 
     init();
   </script>
