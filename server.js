@@ -287,7 +287,7 @@ app.post('/api/businesses', (req, res) => {
   
   const { name, type, details, instructions } = req.body;
   if (!name || !type || !details) {
-    return res.status(400).json({ error: "Name, Type aur Details zaroori hain!" });
+    return res.status(400).json({ error: "Name, Type, and Details are required!" });
   }
   const db = loadDB();
   const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
@@ -759,7 +759,7 @@ function generateDashboard(user) {
     function renderRecords(records) {
       const box = document.getElementById('recordsBox');
       if (!records || records.length === 0) {
-        box.innerHTML = '<p class="muted" style="padding:12px;">Abhi koi booking nahi hai.</p>';
+        box.innerHTML = '<p class="muted" style="padding:12px;">No bookings found.</p>';
         return;
       }
       let html = '';
