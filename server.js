@@ -55,26 +55,128 @@ const MODELS = [
   'gemini-3.7-flash'
 ];
 
-// Default data
+// Default data with enhanced business schema
 const defaultData = {
   businesses: {
     clinic: {
+      id: 'clinic',
       name: "",
       type: "Healthcare / Clinic",
       details: "Timings: 10 AM - 8 PM (Sunday closed). Doctors: Dr. Sharma (Dentist, Fees ₹500), Dr. Verma (General Physician, Fees ₹400). Address: Shastri Circle, Udaipur.",
-      instructions: "You are a polite clinic receptionist. Speak in English. Understand the patient's problem, share doctor details and fees, and ask for their Name, Phone Number, and Preferred Time to book an appointment."
+      instructions: "You are a polite clinic receptionist. Speak in English. Understand the patient's problem, share doctor details and fees, and ask for their Name, Phone Number, and Preferred Time to book an appointment.",
+      adminProfile: {
+        adminName: "",
+        businessName: "",
+        contactPhone: "",
+        contactEmail: "",
+        address: "",
+        bio: ""
+      },
+      whatsapp: {
+        businessNumber: "",
+        autoConfirmTemplate: "Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!",
+        sendConfirmationLink: true
+      },
+      services: [],
+      staff: [],
+      workingHours: {
+        monday: { open: "10:00", close: "20:00", closed: false },
+        tuesday: { open: "10:00", close: "20:00", closed: false },
+        wednesday: { open: "10:00", close: "20:00", closed: false },
+        thursday: { open: "10:00", close: "20:00", closed: false },
+        friday: { open: "10:00", close: "20:00", closed: false },
+        saturday: { open: "10:00", close: "20:00", closed: false },
+        sunday: { open: "10:00", close: "20:00", closed: true }
+      },
+      timeOff: [],
+      staff: [],
+      upi: {
+        enabled: false,
+        upiId: "",
+        payeeName: "",
+        advanceAmount: 0,
+        advanceType: "fixed"
+      }
     },
     restaurant: {
+      id: "restaurant",
       name: "",
       type: "Restaurant / Cafe",
       details: "Timings: 11 AM - 11 PM. Menu: Paneer Tikka (₹240), Dal Makhani (₹220), Woodfire Margherita Pizza (₹350), Cold Coffee (₹120). Free home delivery within 5 km.",
-      instructions: "You are a friendly restaurant manager. Speak in English. Suggest menu items, and for table bookings or food delivery orders, ask for Customer Name, Phone, Items/Guests, and Time/Address."
+      instructions: "You are a friendly restaurant manager. Speak in English. Suggest menu items, and for table bookings or food delivery orders, ask for Customer Name, Phone, Items/Guests, and Time/Address.",
+      adminProfile: {
+        adminName: "",
+        businessName: "",
+        contactPhone: "",
+        contactEmail: "",
+        address: "",
+        bio: ""
+      },
+      whatsapp: {
+        businessNumber: "",
+        autoConfirmTemplate: "Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!",
+        sendConfirmationLink: true
+      },
+      services: [],
+      staff: [],
+      workingHours: {
+        monday: { open: "11:00", close: "23:00", closed: false },
+        tuesday: { open: "11:00", close: "23:00", closed: false },
+        wednesday: { open: "11:00", close: "23:00", closed: false },
+        thursday: { open: "11:00", close: "23:00", closed: false },
+        friday: { open: "11:00", close: "23:00", closed: false },
+        saturday: { open: "11:00", close: "23:00", closed: false },
+        sunday: { open: "11:00", close: "23:00", closed: false }
+      },
+      timeOff: [],
+      staff: [],
+      upi: {
+        enabled: false,
+        upiId: "",
+        payeeName: "",
+        advanceAmount: 0,
+        advanceType: "fixed"
+      }
     },
     ecommerce: {
+      id: "ecommerce",
       name: "",
       type: "E-commerce Store",
       details: "Products: Gold-Plated Necklaces (₹1,299), Silver Rings (₹799), Bridal Sets (₹3,499). Shipping: Free all-India delivery (3-5 days). Return Policy: 7-day easy exchange/return.",
-      instructions: "You are a helpful e-commerce support executive. Speak in English. Recommend jewelry to customers, explain policies, and help with placing or tracking orders."
+      instructions: "You are a helpful e-commerce support executive. Speak in English. Recommend jewelry to customers, explain policies, and help with placing or tracking orders.",
+      adminProfile: {
+        adminName: "",
+        businessName: "",
+        contactPhone: "",
+        contactEmail: "",
+        address: "",
+        bio: ""
+      },
+      whatsapp: {
+        businessNumber: "",
+        autoConfirmTemplate: "Your order for {{service}} is confirmed. Order ID: {{bookingId}}. Thank you for shopping with {{businessName}}!",
+        sendConfirmationLink: true
+      },
+      services: [],
+      staff: [],
+      workingHours: {
+        monday: { open: "10:00", close: "20:00", closed: false },
+        tuesday: { open: "10:00", close: "20:00", closed: false },
+        wednesday: { open: "10:00", close: "20:00", closed: false },
+        thursday: { open: "10:00", close: "20:00", closed: false },
+        friday: { open: "10:00", close: "20:00", closed: false },
+        saturday: { open: "10:00", close: "20:00", closed: false },
+        sunday: { open: "10:00", close: "20:00", closed: true }
+      },
+      timeOff: [],
+      staff: [],
+      upi: {
+        enabled: false,
+        upiId: "",
+        payeeName: "",
+        advanceAmount: 0,
+        advanceType: "fixed"
+      }
     }
   },
   records: [],
@@ -165,22 +267,6 @@ function optionalAuth(req, res, next) {
   next();
 }
 
-const saveRecordTool = {
-  name: "save_customer_request",
-  description: "Call this tool when a customer books an appointment, places a food order or table booking at a restaurant, or places a product order at a store.",
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      businessId: { type: Type.STRING, description: "Active business ki ID" },
-      customerName: { type: Type.STRING, description: "Customer ka poora naam" },
-      phone: { type: Type.STRING, description: "Customer ka mobile number" },
-      requestType: { type: Type.STRING, description: "Appointment, Food Order, Table Booking, ya Product Order" },
-      details: { type: Type.STRING, description: "Time, date, ya items ki poori detail" }
-    },
-    required: ["businessId", "customerName", "phone", "requestType", "details"]
-  }
-};
-
 async function callGeminiWithFallback(contents, systemPrompt, useTools = true) {
   let lastError;
   for (const modelName of MODELS) {
@@ -198,7 +284,6 @@ async function callGeminiWithFallback(contents, systemPrompt, useTools = true) {
 
 // ============ AUTHENTICATION ROUTES ============
 
-// Sign Up
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { businessName, email, password } = req.body;
@@ -228,7 +313,6 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-// Login
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -258,13 +342,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Logout
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('token', { ...cookieOptions, maxAge: 0 });
   res.json({ success: true });
 });
 
-// Get current user
 app.get('/api/auth/me', optionalAuth, (req, res) => {
   if (req.user) {
     res.json({ 
@@ -273,6 +355,59 @@ app.get('/api/auth/me', optionalAuth, (req, res) => {
   } else {
     res.status(401).json({ error: 'Not authenticated' });
   }
+});
+
+// ============ BUSINESS CONFIG ROUTES ============
+
+app.get('/api/businesses', (req, res) => {
+  const db = loadDB();
+  const businesses = Object.values(db.businesses).map(b => ({
+    id: b.id,
+    name: b.name,
+    type: b.type
+  }));
+  res.json({ businesses });
+});
+
+app.get('/api/business/:id/config', (req, res) => {
+  const db = loadDB();
+  const biz = db.businesses[req.params.id];
+  if (!biz) {
+    return res.status(404).json({ error: 'Business not found' });
+  }
+  res.json(biz);
+});
+
+app.post('/api/business/:id/config', async (req, res) => {
+  try {
+    const db = loadDB();
+    const bizId = req.params.id;
+    if (!db.businesses[bizId]) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+    const updates = req.body;
+    db.businesses[bizId] = { ...db.businesses[bizId], ...updates, updatedAt: new Date().toISOString() };
+    saveDB(db);
+    res.json({ success: true, business: db.businesses[bizId] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API to get business config for chat (used by AI)
+app.get('/api/business/:id/chat-config', (req, res) => {
+  const db = loadDB();
+  const biz = db.businesses[req.params.id];
+  if (!biz) {
+    return res.status(404).json({ error: 'Business not found' });
+  }
+  res.json({
+    services: biz.services || [],
+    staff: biz.staff || [],
+    workingHours: biz.workingHours || {},
+    timeOff: biz.timeOff || [],
+    upi: biz.upi || { enabled: false }
+  });
 });
 
 // ============ EXISTING ROUTES ============
@@ -291,15 +426,78 @@ app.post('/api/businesses', (req, res) => {
   }
   const db = loadDB();
   const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
-  db.businesses[id] = {
+  const newBusiness = {
+    id,
     name,
     type,
     details,
-    instructions: instructions || `You are a polite AI assistant for ${name}. Speak in English and ask for the customer's Name, Phone Number, and preferred Time/Details to book an appointment or place an order.`
+    instructions: instructions || `You are a polite AI assistant for ${name}. Speak in English and ask for the customer's Name, Phone Number, and preferred Time/Details to book an appointment or place an order.`,
+    adminProfile: { adminName: "", businessName: name, contactPhone: "", contactEmail: "", address: "", bio: "" },
+    whatsapp: { businessNumber: "", autoConfirmTemplate: "Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!", sendConfirmationLink: true },
+    services: [],
+    staff: [],
+    workingHours: {
+      monday: { open: "10:00", close: "20:00", closed: false },
+      tuesday: { open: "10:00", close: "20:00", closed: false },
+      wednesday: { open: "10:00", close: "20:00", closed: false },
+      thursday: { open: "10:00", close: "20:00", closed: false },
+      friday: { open: "10:00", close: "20:00", closed: false },
+      saturday: { open: "10:00", close: "20:00", closed: false },
+      sunday: { open: "10:00", close: "20:00", closed: true }
+    },
+    timeOff: [],
+    staff: [],
+    upi: { enabled: false, upiId: "", payeeName: "", advanceAmount: 0, advanceType: "fixed" }
   };
+  db.businesses[id] = newBusiness;
   saveDB(db);
-  res.json({ success: true, id, businesses: db.businesses });
+  res.json({ success: true, id, business: newBusiness });
 });
+
+// ============ CHAT ROUTE WITH BUSINESS CONFIG ============
+
+const saveRecordTool = {
+  name: "save_customer_request",
+  description: "Call this tool when a customer books an appointment, places a food order or table booking at a restaurant, or places a product order at a store.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      businessId: { type: Type.STRING, description: "Active business ID" },
+      customerName: { type: Type.STRING, description: "Customer full name" },
+      phone: { type: Type.STRING, description: "Customer mobile number" },
+      requestType: { type: Type.STRING, description: "Appointment, Food Order, Table Booking, or Product Order" },
+      details: { type: Type.STRING, description: "Time, date, or items details" }
+    },
+    required: ["businessId", "customerName", "phone", "requestType", "details"]
+  }
+};
+
+
+
+function findBusinessById(businessId) {
+  const db = loadDB();
+  return db.businesses[businessId];
+}
+
+function generateBookingId() {
+  return "REQ-" + Math.floor(1000 + Math.random() * 9000);
+}
+
+function generateUpiPaymentLink(upiId, payeeName, amount, note) {
+  const params = new URLSearchParams({
+    pa: upiId,
+    pn: payeeName,
+    am: amount.toString(),
+    cu: 'INR',
+    tn: note
+  });
+  return `upi://pay?${params.toString()}`;
+}
+
+function generateWhatsAppLink(phone, message) {
+  const clean = phone.replace(/\D/g, '');
+  return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+}
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -311,7 +509,17 @@ app.post('/api/chat', async (req, res) => {
       Business Name: ${biz.name} (${biz.type})
       Business Details & Pricing: ${biz.details}
       Role & Rules: ${biz.instructions}
+      
+      Services: ${JSON.stringify(biz.services || [])}
+      Staff: ${JSON.stringify(biz.staff || [])}
+      Working Hours: ${JSON.stringify(biz.workingHours || {})}
+      Time Off: ${JSON.stringify(biz.timeOff || [])}
+      UPI Enabled: ${biz.upi?.enabled || false}
+      
       Important: When the customer provides all required details (Name, Phone, Time/Items), call the 'save_customer_request' tool to confirm the booking. Keep replies short, natural, and helpful.
+      Never book on time-off dates. Never offer unavailable time slots.
+      Always quote exact prices from the services list.
+      If UPI is enabled and advance payment is required, inform the customer about the advance amount.
     `;
 
     const contents = [...history, { role: 'user', parts: [{ text: message }] }];
@@ -319,13 +527,56 @@ app.post('/api/chat', async (req, res) => {
 
     if (response.functionCalls && response.functionCalls.length > 0) {
       const call = response.functionCalls[0];
+      const bookingId = generateBookingId();
       const bookingData = {
-        id: "REQ-" + Math.floor(1000 + Math.random() * 9000),
+        id: bookingId,
+        businessId: businessId,
         businessName: biz.name,
         timestamp: new Date().toLocaleString('en-IN'),
         ...call.args
       };
       db.records.unshift(bookingData);
+      saveDB(db);
+
+      // Generate WhatsApp confirmation link if enabled
+      let whatsappLink = null;
+      const bizConfig = db.businesses[businessId];
+      if (biz.whatsapp?.sendConfirmationLink && biz.whatsapp.businessNumber) {
+        const template = biz.whatsapp.autoConfirmTemplate || "Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!";
+        const msg = biz.whatsapp.autoConfirmTemplate
+          .replace('{{service}}', call.args.requestType || 'Booking')
+          .replace('{{date}}', new Date().toLocaleDateString('en-IN'))
+          .replace('{{time}}', call.args.time || 'TBD')
+          .replace('{{bookingId}}', bookingId)
+          .replace('{{businessName}}', biz.name);
+        const link = generateWhatsAppLink(biz.whatsapp.businessNumber, msg);
+        whatsappLink = link;
+      }
+
+      // Determine initial status based on UPI advance payment
+      let initialStatus = 'confirmed';
+      let advanceRequired = false;
+      let upiLink = null;
+      if (biz.upi?.enabled && biz.upi.advanceAmount > 0) {
+        initialStatus = 'pending_advance';
+        advanceRequired = true;
+        const amount = biz.upi.advanceType === 'percentage' 
+          ? (biz.upi.advanceAmount / 100) * (call.args.price || 0)
+          : biz.upi.advanceAmount;
+        upiLink = generateUpiPaymentLink(biz.upi.upiId, biz.upi.payeeName, amount, `Advance for booking ${bookingId}`);
+      }
+
+      const bookingDataFull = {
+        id: generateBookingId(),
+        businessId: businessId,
+        businessName: biz.name,
+        timestamp: new Date().toLocaleString('en-IN'),
+        ...call.args,
+        status: initialStatus,
+        advanceRequired,
+        upiLink
+      };
+      db.records.unshift(bookingDataFull);
       saveDB(db);
 
       const { res: followUp } = await callGeminiWithFallback([
@@ -336,16 +587,97 @@ app.post('/api/chat', async (req, res) => {
           parts: [{
             functionResponse: {
               name: call.name,
-              response: { status: "confirmed", bookingId: bookingData.id }
+              response: { 
+                status: "confirmed", 
+                bookingId: bookingData.id,
+                advanceRequired: advanceRequired,
+                upiLink: upiLink,
+                whatsappLink: whatsappLink
+              }
             }
           }]
         }
       ], systemPrompt, false);
 
-      return res.json({ reply: followUp.text, records: db.records });
+      return res.json({ reply: followUp.text, records: db.records, booking: bookingData });
     }
 
     res.json({ reply: response.text, records: db.records });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ BOOKING MANAGEMENT ROUTES ============
+
+app.patch('/api/booking/:id', async (req, res) => {
+  try {
+    const { status, advanceVerified, utrReference } = req.body;
+    const db = loadDB();
+    const record = db.records.find(r => r.id === req.params.id);
+    if (!record) return res.status(404).json({ error: 'Booking not found' });
+    
+    if (status) record.status = status;
+    if (advanceVerified) {
+      record.advanceVerified = true;
+      record.advanceVerifiedAt = new Date().toISOString();
+    }
+    if (utrReference) record.utrReference = utrReference;
+    if (record.advanceRequired && record.advanceVerified) {
+      record.status = 'confirmed';
+    }
+    record.updatedAt = new Date().toISOString();
+    saveDB(db);
+    res.json({ success: true, booking: record });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/booking/:id/whatsapp', (req, res) => {
+  try {
+    const db = loadDB();
+    const record = db.records.find(r => r.id === req.params.id);
+    if (!record) return res.status(404).json({ error: 'Booking not found' });
+    
+    const biz = db.businesses[record.businessId];
+    const bizConfig = db.businesses[record.businessId];
+    if (!bizConfig.whatsapp?.businessNumber) {
+      return res.status(400).json({ error: 'WhatsApp not configured for this business' });
+    }
+    
+    const template = bizConfig.whatsapp?.autoConfirmTemplate || "Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!";
+    const msg = bizConfig.whatsapp.autoConfirmTemplate
+      .replace('{{service}}', record.requestType || 'Booking')
+      .replace('{{date}}', new Date().toLocaleDateString('en-IN'))
+      .replace('{{time}}', record.time || 'TBD')
+      .replace('{{bookingId}}', record.id)
+      .replace('{{businessName}}', biz.name);
+    
+    const link = generateWhatsAppLink(bizConfig.whatsapp.businessNumber, msg);
+    res.json({ success: true, whatsappLink: link });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UPI payment verification
+app.post('/api/booking/:id/upi/verify', async (req, res) => {
+  try {
+    const { utrReference } = req.body;
+    const db = loadDB();
+    const record = db.records.find(r => r.id === req.params.id);
+    if (!record) return res.status(404).json({ error: 'Booking not found' });
+    if (!record.advanceRequired) return res.status(400).json({ error: 'Advance payment not required for this booking' });
+    
+    record.utrReference = utrReference;
+    record.advanceVerified = true;
+    record.advanceVerifiedAt = new Date().toISOString();
+    record.status = 'confirmed';
+    record.updatedAt = new Date().toISOString();
+    saveDB(db);
+    
+    res.json({ success: true, booking: record });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -360,6 +692,8 @@ app.get('/', optionalAuth, (req, res) => {
     res.send(generateLoginPage());
   }
 });
+
+// ============ DASHBOARD GENERATOR ============
 
 function generateDashboard(user) {
   return `<!DOCTYPE html>
@@ -400,6 +734,7 @@ function generateDashboard(user) {
     .badge.confirmed { background: rgba(16,185,129,.2); color: #34d399; }
     .badge.cancelled { background: rgba(239,68,68,.2); color: #f87171; }
     .badge.pending { background: rgba(234,179,8,.2); color: #facc15; }
+    .badge.pending_advance { background: rgba(249,115,22,.2); color: #fb923c; }
 
     /* Accordion / Collapsible Sections */
     .accordion-btn {
@@ -455,10 +790,28 @@ function generateDashboard(user) {
     .bk-act-btn.cancel { background: #dc2626; color: #fff; }
     .bk-act-btn.whatsapp { background: #15803d; color: #fff; }
     .bk-act-btn.receipt { background: #4f46e5; color: #fff; }
+    .bk-act-btn.upi { background: #7c3aed; color: #fff; }
+    .bk-act-btn.verify { background: #16a34a; color: #fff; }
 
     /* Admin Setup Center */
     .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
     .setup-grid.full { grid-column: 1 / -1; }
+    .tab-buttons { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn { padding: 8px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #cbd5e1; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .form-row > * { flex: 1; min-width: 200px; }
+    .service-row, .staff-row, .timeoff-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; }
+    .service-row > *, .staff-row > *, .timeoff-row > * { flex: 1; min-width: 120px; }
+    .service-row input, .staff-row input, .timeoff-row input { margin-top: 0 !important; width: auto; flex: 1; }
+    .timeoff-row input[type="date"] { width: 160px; }
+    .remove-btn { background: #dc2626; color: #fff; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+
+    /* UPI Section */
+    .upi-section { background: #0f172a; padding: 16px; border-radius: 10px; border: 1px solid #334155; margin-top: 12px; }
+    .upi-link { display: inline-block; margin-top: 8px; padding: 8px 16px; background: #7c3aed; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; }
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -541,66 +894,230 @@ function generateDashboard(user) {
             <button type="button" class="bk-filter" data-status="confirmed" onclick="setBookingFilter('confirmed')">Confirmed</button>
             <button type="button" class="bk-filter" data-status="cancelled" onclick="setBookingFilter('cancelled')">Cancelled</button>
             <button type="button" class="bk-filter" data-status="pending" onclick="setBookingFilter('pending')">Pending</button>
+            <button type="button" class="bk-filter" data-status="pending_advance" onclick="setBookingFilter('pending_advance')">Pending Advance</button>
           </div>
         </div>
         <div id="recordsBox" style="max-height: 420px; overflow-y: auto;"></div>
       </div>
     </div>
 
-    <!-- 4. ADMIN SETUP CENTER -->
+    <!-- 4. ADMIN SETUP CENTER (Enhanced) -->
     <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-admin-setup" data-target="acc-admin-setup">
       <span>⚙️ Admin Setup Center</span>
       <span class="accordion-icon">▼</span>
     </button>
     <div id="acc-admin-setup" class="accordion-content">
       <div class="card">
-        <h3 class="card-title">Admin Profile & Workspace Setup</h3>
-        <div class="setup-grid">
-          <div>
-            <label>Admin Name</label>
-            <input id="setupName" placeholder="Your name">
-          </div>
-          <div>
-            <label>Role / Title</label>
-            <input id="setupRole" placeholder="SaaS Owner, Admin, etc.">
-          </div>
-          <div>
-            <label>WhatsApp Alert Number</label>
-            <input id="setupPhone" placeholder="9198XXXXXXXX" type="tel">
-          </div>
-          <div>
-            <label>Support Email</label>
-            <input id="setupEmail" placeholder="admin@domain.com" type="email">
-          </div>
-          <div>
-            <label>Default Active Business</label>
-            <select id="setupDefaultBiz"></select>
-          </div>
-          <div>
-            <label>Admin PIN</label>
-            <input id="setupPin" placeholder="4646" maxlength="8" type="text">
-          </div>
+        <h3 class="card-title">Admin Setup Center</h3>
+        
+        <!-- Business Selector -->
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 600; margin-bottom: 8px; display: block;">Select Business to Configure:</label>
+          <select id="configBizSelect" onchange="loadBusinessConfig()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 14px;"></select>
         </div>
-        <div class="setup-grid" style="margin-top:10px;">
-          <div>
-            <label>Workspace / Brand Label</label>
-            <input id="setupBrand" placeholder="Smart Booking SaaS">
-          </div>
-          <div>
-            <label>Receipt Note / Footer</label>
-            <input id="setupFooter" placeholder="Thank you for your booking!">
-          </div>
+
+        <div class="tab-buttons" id="configTabs">
+          <button type="button" class="tab-btn active" data-tab="profile">👤 Profile</button>
+          <button type="button" class="tab-btn" data-tab="whatsapp">💬 WhatsApp</button>
+          <button type="button" class="tab-btn" data-tab="services">🛠 Services & Pricing</button>
+          <button type="button" class="tab-btn" data-tab="staff">👥 Staff</button>
+          <button type="button" class="tab-btn" data-tab="hours">🕐 Hours & Time Off</button>
+          <button type="button" class="tab-btn" data-tab="upi">💳 UPI & Advance</button>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#cbd5e1;">
-          <input id="setupAutoWa" type="checkbox" checked style="width:15px;height:15px;cursor:pointer;">
-          <label for="setupAutoWa" style="cursor:pointer;margin:0;">Enable Auto WhatsApp Prompts on Booking / Confirm / Complete / Receipt</label>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-          <button class="primary" onclick="saveAdminSetup()">Save Setup</button>
-          <button class="ghost" onclick="applyDefaultBusiness()">Switch to Default Business</button>
-          <button class="ghost" onclick="copyAdminUrl()">Copy Admin URL</button>
-          <button class="ghost" onclick="copyClientUrl()">Copy Client Link</button>
-          <span id="setupStatus" style="font-size:12px;color:#34d399;font-weight:600;align-self:center;"></span>
+
+        <!-- Profile Tab -->
+        <div id="tab-profile" class="tab-panel active">
+          <div class="card">
+            <h3 class="card-title">Admin & Business Profile</h3>
+            <div class="setup-grid">
+              <div>
+                <label>Admin Name</label>
+                <input id="cfgAdminName" placeholder="Your name">
+              </div>
+              <div>
+                <label>Business Name</label>
+                <input id="cfgBusinessName" placeholder="Business name">
+              </div>
+              <div>
+                <label>Contact Phone</label>
+                <input id="cfgContactPhone" placeholder="+91 98765 43210" type="tel">
+              </div>
+              <div>
+                <label>Contact Email</label>
+                <input id="cfgContactEmail" placeholder="contact@business.com" type="email">
+              </div>
+              <div class="setup-grid full">
+                <label>Address</label>
+                <textarea id="cfgAddress" rows="2" placeholder="Full business address"></textarea>
+              </div>
+              <div class="setup-grid full">
+                <label>Business Bio / Tagline</label>
+                <textarea id="cfgBio" rows="2" placeholder="Short description for customers"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- WhatsApp Tab -->
+          <div id="tab-whatsapp" class="tab-panel">
+            <div class="card">
+              <h3 class="card-title">WhatsApp Settings</h3>
+              <div class="setup-grid">
+                <div>
+                  <label>Business WhatsApp Number (with country code)</label>
+                  <input id="cfgWaNumber" placeholder="919876543210" type="tel">
+                </div>
+                <div>
+                  <label>
+                    <input type="checkbox" id="cfgWaAutoConfirm" checked>
+                    Send WhatsApp Booking Confirmation Link
+                  </label>
+                </div>
+              </div>
+              <div class="setup-grid full">
+                <label>Auto-Confirm Message Template</label>
+                <textarea id="cfgWaTemplate" rows="3" placeholder="Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!"></textarea>
+                <p class="muted" style="font-size: 11px; margin-top: 4px;">Available variables: {{service}}, {{date}}, {{time}}, {{bookingId}}, {{businessName}}, {{customerName}}</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+                <button class="primary" onclick="saveBusinessConfig('whatsapp')">Save WhatsApp Settings</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Services & Pricing Tab -->
+          <div id="tab-services" class="tab-panel">
+            <div class="card">
+              <h3 class="card-title">Services & Pricing</h3>
+              <p class="muted" style="margin-bottom: 12px;">Add, edit, or remove services. These will be used by the AI for booking and pricing.</p>
+              <div id="servicesList"></div>
+              <div class="service-row" style="background: transparent; border: none; padding: 0; margin-top: 12px;">
+                <input type="text" id="newServiceName" placeholder="Service Name (e.g., Haircut)" style="flex: 2;">
+                <input type="number" id="newServicePrice" placeholder="Price (₹)" style="flex: 1; width: 100px;" min="0">
+                <input type="number" id="newServiceDuration" placeholder="Duration (mins)" style="flex: 1; width: 100px;" min="5">
+                <button type="button" class="primary" onclick="addService()" style="width: auto; height: 40px;">+ Add Service</button>
+              </div>
+              <div id="servicesList"></div>
+            </div>
+          </div>
+
+          <!-- Staff Tab -->
+          <div id="tab-staff" class="tab-panel">
+            <div class="card">
+              <h3 class="card-title">Staff / Employees</h3>
+              <p class="muted" style="margin-bottom: 12px;">Add staff members who can handle bookings.</p>
+              <div class="staff-row" style="background: transparent; border: none; padding: 0; margin-top: 12px;">
+                <input type="text" id="newStaffName" placeholder="Staff Name" style="flex: 2;">
+                <input type="text" id="newStaffRole" placeholder="Role / Specialty (e.g., Senior Stylist)" style="flex: 2;">
+                <select id="newStaffStatus" style="width: 120px;">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                <button type="button" class="primary" onclick="addStaff()" style="width: auto; height: 40px;">+ Add Staff</button>
+              </div>
+              <div id="staffList"></div>
+            </div>
+          </div>
+
+          <!-- Hours & Time Off Tab -->
+          <div id="tab-hours" class="tab-panel">
+            <div class="card">
+              <h3 class="card-title">Working Hours & Time Off</h3>
+              
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin-bottom: 12px; color: #cbd5e1;">Weekly Working Hours</h4>
+                <div id="workingHoursGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;"></div>
+              </div>
+
+              <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #334155;">
+                <h4 style="margin-bottom: 12px; color: #cbd5e1;">Time Off / Blocked Dates</h4>
+                <p class="muted" style="margin-bottom: 12px;">Add holidays, staff leave, or maintenance days when no bookings are accepted.</p>
+                <div class="timeoff-row" style="background: transparent; border: none; padding: 0; margin-top: 8px;">
+                  <input type="date" id="newTimeOffStart" style="flex: 1;">
+                  <input type="date" id="newTimeOffEnd" style="flex: 1;">
+                  <input type="text" id="newTimeOffReason" placeholder="Reason (e.g., Holiday, Staff Leave)" style="flex: 2;">
+                  <button type="button" class="primary" onclick="addTimeOff()" style="width: auto; height: 40px;">+ Add Time Off</button>
+                </div>
+                <div id="timeOffList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- UPI & Advance Tab -->
+          <div id="tab-upi" class="tab-panel">
+            <div class="card">
+              <h3 class="card-title">UPI Payment & Advance Booking Lock</h3>
+              
+              <div class="setup-grid">
+                <div>
+                  <label>
+                    <input type="checkbox" id="cfgUpiEnabled" onchange="toggleUpiFields()">
+                    Require Advance Payment to Lock Booking
+                  </label>
+                </div>
+              </div>
+
+              <div id="upiFields" class="upi-section" style="display: none;">
+                <div class="setup-grid">
+                  <div>
+                    <label>Business UPI ID</label>
+                    <input id="cfgUpiId" placeholder="yourbusiness@upi">
+                  </div>
+                  <div>
+                    <label>Payee Name</label>
+                    <input id="cfgUpiPayee" placeholder="Business Name">
+                  </div>
+                  <div>
+                    <label>Advance Amount</label>
+                    <input type="number" id="cfgUpiAmount" placeholder="500" min="0" step="10">
+                  </div>
+                  <div>
+                    <label>Advance Type</label>
+                    <select id="cfgUpiType">
+                      <option value="fixed">Fixed Amount (₹)</option>
+                      <option value="percentage">Percentage of Service Price (%)</option>
+                    </select>
+                  </div>
+                  <div class="setup-grid full">
+                    <label>Payee Name (for UPI)</label>
+                    <input id="cfgUpiPayeeName" placeholder="Business Name for UPI">
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+                  <button class="primary" onclick="saveBusinessConfig('upi')">Save UPI Settings</button>
+                </div>
+
+                <div class="upi-section" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #334155;">
+                  <h4 style="margin-bottom: 12px;">Test UPI Payment Link</h4>
+                  <div class="setup-grid">
+                    <div>
+                      <label>Test Amount (₹)</label>
+                      <input type="number" id="testUpiAmount" value="500" min="1">
+                    </div>
+                    <div>
+                      <label>Test Note</label>
+                      <input id="testUpiNote" placeholder="Advance for booking #123">
+                    </div>
+                  </div>
+                  <button type="button" class="ghost" onclick="generateTestUpiLink()" style="margin-top: 8px;">Generate Test UPI Link</button>
+                  <div id="testUpiResult" class="upi-section" style="margin-top: 12px; display: none;">
+                    <strong>UPI Link:</strong>
+                    <div style="margin-top: 8px; word-break: break-all;">
+                      <code id="upiLinkDisplay" style="background: #0f172a; padding: 8px; border-radius: 6px; display: block; font-size: 12px;"></code>
+                    </div>
+                    <button type="button" class="ghost" onclick="copyUpiLink()" style="margin-top: 8px; width: auto;">Copy Link</button>
+                    <a id="upiLinkAnchor" class="upi-link" href="#" target="_blank" style="display: none;">Open in UPI App</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+            <button class="primary" onclick="saveAllBusinessConfig()">💾 Save All Configuration</button>
+            <button class="ghost" onclick="loadBusinessConfig()">🔄 Reload</button>
+            <span id="configStatus" style="font-size:12px;color:#34d399;font-weight:600;align-self:center;margin-top:4px;"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -638,22 +1155,36 @@ function generateDashboard(user) {
     let history = [];
     let allBusinesses = {};
     let currentBookingFilter = 'all';
+    let currentConfigBizId = null;
 
     function toggleAccordion(panelId, btn) {
       const panel = document.getElementById(panelId);
       if (!panel) return;
       const isOpen = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', String(isOpen));
-      // Force display override to ensure visibility regardless of CSS
       panel.style.display = isOpen ? 'block' : 'none';
     }
 
-    // Attach click handler immediately (not waiting for DOMContentLoaded)
     document.body.addEventListener('click', function(e) {
       const btn = e.target.closest('.accordion-btn[data-target]');
       if (btn) {
         const targetId = btn.getAttribute('data-target');
-        toggleAccordion(targetId, btn);
+        const panel = document.getElementById(targetId);
+        if (!panel) return;
+        const isOpen = panel.classList.toggle('open');
+        btn.setAttribute('aria-expanded', String(isOpen));
+        panel.style.display = isOpen ? 'block' : 'none';
+      }
+    });
+
+    // Tab switching for Admin Setup Center
+    document.addEventListener('click', function(e) {
+      const tabBtn = e.target.closest('.tab-btn[data-tab]');
+      if (tabBtn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        tabBtn.classList.add('active');
+        document.getElementById('tab-' + tabBtn.dataset.tab).classList.add('active');
       }
     });
 
@@ -675,6 +1206,11 @@ function generateDashboard(user) {
       } catch (e) { console.error('stats load failed', e); }
     }
 
+    let history = [];
+    let allBusinesses = {};
+    let currentBookingFilter = 'all';
+    let currentConfigBizId = null;
+
     function populateDropdown(businesses, selectId) {
       allBusinesses = businesses;
       const sel = document.getElementById(selectId || 'bizSelect');
@@ -684,6 +1220,17 @@ function generateDashboard(user) {
       ).join('');
       if (currentVal && businesses[currentVal]) sel.value = currentVal;
 
+      // Also populate config business selector
+      const configSel = document.getElementById('configBizSelect');
+      if (configSel) {
+        configSel.innerHTML = Object.entries(businesses).map(([id, b]) =>
+          '<option value="' + id + '">' + b.name + ' (' + b.type + ')</option>'
+        ).join('');
+        if (currentConfigBizId && businesses[currentConfigBizId]) configSel.value = currentConfigBizId;
+        else if (businesses[configSel.value]) configSel.value = configSel.value;
+      }
+      
+      // Also populate setup default biz
       const setupSel = document.getElementById('setupDefaultBiz');
       if (setupSel) {
         setupSel.innerHTML = Object.entries(businesses).map(([id, b]) =>
@@ -708,6 +1255,7 @@ function generateDashboard(user) {
       resetChat();
       loadStats();
       loadAdminSetup();
+      loadBusinessConfig();
     }
 
     function copyClientLink() {
@@ -747,7 +1295,11 @@ function generateDashboard(user) {
         } else if (data.error) {
           chatBox.innerHTML += '<div class="msg err">Error: ' + data.error + '</div>';
         }
-        if (data.records) renderRecords(data.records);
+        if (data.booking) {
+          renderRecords([data.booking, ...(window.__lastRecords || [])]);
+        } else if (data.records) {
+          renderRecords(data.records);
+        }
       } catch (e) {
         chatBox.innerHTML += '<div class="msg err">Error: ' + e.message + '</div>';
       }
@@ -775,6 +1327,18 @@ function generateDashboard(user) {
         const details = r.details || '—';
         const ts = r.timestamp || '';
 
+        let actionButtons = '';
+        if (status === 'pending_advance') {
+          actionButtons += '<button type="button" class="bk-act-btn upi" onclick="showUpiPayment(\\'' + id + '\\')">💳 UPI Payment</button>';
+          actionButtons += '<button type="button" class="bk-act-btn verify" onclick="verifyAdvancePayment(\\'' + id + '\\')">✅ Verify Payment</button>';
+        } else {
+          actionButtons += '<button type="button" class="bk-act-btn confirm" onclick="updateBookingStatus(\\'' + id + '\\',\\'confirmed\\')">Confirm</button>';
+          actionButtons += '<button type="button" class="bk-act-btn complete" onclick="updateBookingStatus(\\'' + id + '\\',\\'completed\\')">Complete</button>';
+          actionButtons += '<button type="button" class="bk-act-btn cancel" onclick="updateBookingStatus(\\'' + id + '\\',\\'cancelled\\')">Cancel</button>';
+        }
+        actionButtons += '<button type="button" class="bk-act-btn whatsapp" onclick="openWhatsApp(\\'' + phone + '\\',\\'' + id + '\\',\\'' + biz + '\\',\\'' + type + '\\',\\'' + details + '\\')">💬 WhatsApp</button>';
+        actionButtons += '<button type="button" class="bk-act-btn receipt" onclick="openReceipt(\\'' + id + '\\',\\'' + biz + '\\',\\'' + name + '\\',\\'' + phone + '\\',\\'' + type + '\\',\\'' + details + '\\')">🧾 Receipt</button>';
+
         html += '<div class="record" style="display:flex;flex-direction:column;gap:6px;">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
             '<strong>[' + id + '] ' + biz + '</strong>' +
@@ -783,13 +1347,7 @@ function generateDashboard(user) {
           '<div style="font-size:13px;">Customer: ' + name + ' (' + phone + ')</div>' +
           '<div style="font-size:13px;">' + type + ': ' + details + '</div>' +
           '<div class="muted" style="font-size:11px;">' + ts + '</div>' +
-          '<div class="bk-actions">' +
-            '<button type="button" class="bk-act-btn confirm" onclick="updateBookingStatus(\\'' + id + '\\',\\'confirmed\\')">Confirm</button>' +
-            '<button type="button" class="bk-act-btn complete" onclick="updateBookingStatus(\\'' + id + '\\',\\'completed\\')">Complete</button>' +
-            '<button type="button" class="bk-act-btn cancel" onclick="updateBookingStatus(\\'' + id + '\\',\\'cancelled\\')">Cancel</button>' +
-            '<button type="button" class="bk-act-btn whatsapp" onclick="openWhatsApp(\\'' + phone + '\\',\\'' + id + '\\',\\'' + biz + '\\',\\'' + type + '\\',\\'' + details + '\\')">WhatsApp</button>' +
-            '<button type="button" class="bk-act-btn receipt" onclick="openReceipt(\\'' + id + '\\',\\'' + biz + '\\',\\'' + name + '\\',\\'' + phone + '\\',\\'' + type + '\\',\\'' + details + '\\')">Receipt</button>' +
-          '</div>' +
+          '<div class="bk-actions">' + actionButtons + '</div>' +
         '</div>';
       }
       box.innerHTML = html || '<p class="muted" style="padding:12px;">No bookings match the current filter.</p>';
@@ -821,7 +1379,32 @@ function generateDashboard(user) {
     async function updateBookingStatus(id, status) {
       if (status === 'cancelled' && !confirm('Cancel this booking?')) return;
       try {
-        await fetch('/api/businesses/' + id + '/status', {
+        await fetch('/api/booking/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const res = await fetch('/api/data');
+        const data = await res.json();
+        renderRecords(data.records);
+      } catch (e) { alert('Failed: ' + e.message); }
+    }
+
+    function openWhatsApp(phone, id, biz, type, details) {
+      const clean = phone.replace(/\\D/g, '');
+      const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
+      window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+    }
+
+    function openReceipt(id, biz, name, phone, type, details) {
+      const win = window.open('', '_blank');
+      win.document.write('<html><head><title>Receipt ' + id + '</title><style>body{font-family:sans-serif;padding:20px;background:#0b1120;color:#f8fafc}.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;max-width:400px;margin:0 auto}</style></head><body><div class="card"><h2>Booking Receipt</h2><p><b>ID:</b> ' + id + '</p><p><b>Business:</b> ' + biz + '</p><p><b>Customer:</b> ' + name + ' (' + phone + ')</p><p><b>Type:</b> ' + type + '</p><p><b>Details:</b> ' + details + '</p><p class="muted">Smart Booking SaaS</p></div></body></html>');
+    }
+
+    async function updateBookingStatus(id, status) {
+      if (status === 'cancelled' && !confirm('Cancel this booking?')) return;
+      try {
+        await fetch('/api/booking/' + id, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
@@ -930,9 +1513,1428 @@ function generateDashboard(user) {
       if (!panel) return;
       const isOpen = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', String(isOpen));
+      panel.style.display = isOpen ? 'block' : 'none';
     }
 
-    init();
+    document.body.addEventListener('click', function(e) {
+      const btn = e.target.closest('.accordion-btn[data-target]');
+      if (btn) {
+        const targetId = btn.getAttribute('data-target');
+        const panel = document.getElementById(targetId);
+        if (!panel) return;
+        const isOpen = panel.classList.toggle('open');
+        btn.setAttribute('aria-expanded', String(isOpen));
+        panel.style.display = isOpen ? 'block' : 'none';
+      }
+    });
+
+    // Tab switching for Admin Setup Center
+    document.addEventListener('click', function(e) {
+      const tabBtn = e.target.closest('.tab-btn[data-tab]');
+      if (tabBtn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        tabBtn.classList.add('active');
+        document.getElementById('tab-' + tabBtn.dataset.tab).classList.add('active');
+      }
+    });
+
+    // Business Config Selector
+    function loadBusinessConfig() {
+      const select = document.getElementById('configBizSelect');
+      const bizId = select.value;
+      if (!bizId) return;
+      currentConfigBizId = bizId;
+      fetch('/api/business/' + bizId + '/config')
+        .then(r => r.json())
+        .then(biz => {
+          // Profile tab
+          document.getElementById('cfgAdminName').value = biz.adminProfile?.adminName || '';
+          document.getElementById('cfgBusinessName').value = biz.adminProfile?.businessName || biz.name || '';
+          document.getElementById('cfgContactPhone').value = biz.adminProfile?.contactPhone || '';
+          document.getElementById('cfgContactEmail').value = biz.adminProfile?.contactEmail || '';
+          document.getElementById('cfgAddress').value = biz.adminProfile?.address || '';
+          document.getElementById('cfgBio').value = biz.adminProfile?.bio || '';
+
+          // WhatsApp
+          document.getElementById('cfgWaNumber').value = biz.whatsapp?.businessNumber || '';
+          document.getElementById('cfgWaAutoConfirm').checked = biz.whatsapp?.sendConfirmationLink !== false;
+          document.getElementById('cfgWaTemplate').value = biz.whatsapp?.autoConfirmTemplate || 'Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!';
+
+          // Services
+          renderServices(biz.services || []);
+          
+          // Staff
+          renderStaff(biz.staff || []);
+          
+          // Working Hours
+          renderWorkingHours(biz.workingHours || {});
+          
+          // Time Off
+          renderTimeOff(biz.timeOff || []);
+          
+          // UPI
+          document.getElementById('cfgUpiEnabled').checked = biz.upi?.enabled || false;
+          toggleUpiFields();
+          document.getElementById('cfgUpiId').value = biz.upi?.upiId || '';
+          document.getElementById('cfgUpiPayee').value = biz.upi?.payeeName || '';
+          document.getElementById('cfgUpiAmount').value = biz.upi?.advanceAmount || 0;
+          document.getElementById('cfgUpiType').value = biz.upi?.advanceType || 'fixed';
+          document.getElementById('cfgUpiPayeeName').value = biz.upi?.payeeName || '';
+          
+          currentConfigBizId = bizId;
+        })
+        .catch(e => console.error('Failed to load business config:', e));
+    }
+
+    function saveBusinessConfig(section) {
+      if (!currentConfigBizId) return alert('Select a business first');
+      const bizId = currentConfigBizId;
+      
+      let updates = {};
+      if (section === 'profile' || section === 'all') {
+        updates.adminProfile = {
+          adminName: document.getElementById('cfgAdminName').value.trim(),
+          businessName: document.getElementById('cfgBusinessName').value.trim(),
+          contactPhone: document.getElementById('cfgContactPhone').value.trim(),
+          contactEmail: document.getElementById('cfgContactEmail').value.trim(),
+          address: document.getElementById('cfgAddress').value.trim(),
+          bio: document.getElementById('cfgBio').value.trim()
+        };
+      }
+      if (section === 'whatsapp' || section === 'all') {
+        updates.whatsapp = {
+          businessNumber: document.getElementById('cfgWaNumber').value.trim(),
+          sendConfirmationLink: document.getElementById('cfgWaAutoConfirm').checked,
+          autoConfirmTemplate: document.getElementById('cfgWaTemplate').value.trim()
+        };
+      }
+      if (section === 'upi' || section === 'all') {
+        updates.upi = {
+          enabled: document.getElementById('cfgUpiEnabled').checked,
+          upiId: document.getElementById('cfgUpiId').value.trim(),
+          payeeName: document.getElementById('cfgUpiPayee').value.trim(),
+          advanceAmount: parseFloat(document.getElementById('cfgUpiAmount').value) || 0,
+          advanceType: document.getElementById('cfgUpiType').value,
+          payeeName: document.getElementById('cfgUpiPayeeName').value.trim()
+        };
+      }
+
+      fetch('/api/business/' + currentConfigBizId + '/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) showConfigStatus('Saved successfully!');
+        else alert('Error: ' + d.error);
+      })
+      .catch(e => alert('Error: ' + e.message));
+    }
+
+    function saveAllBusinessConfig() {
+      saveBusinessConfig('all');
+    }
+
+    function showConfigStatus(msg) {
+      const el = document.getElementById('configStatus');
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 2000);
+    }
+
+    function toggleUpiFields() {
+      const enabled = document.getElementById('cfgUpiEnabled').checked;
+      document.getElementById('upiFields').style.display = enabled ? 'block' : 'none';
+    }
+
+    function generateTestUpiLink() {
+      const upiId = document.getElementById('cfgUpiId').value;
+      const payee = document.getElementById('cfgUpiPayee').value;
+      const amount = document.getElementById('testUpiAmount').value;
+      const note = document.getElementById('testUpiNote').value;
+      if (!upiId) return alert('Enter UPI ID first');
+      const link = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(payee) + '&am=' + amount + '&cu=INR&tn=' + encodeURIComponent(note);
+      document.getElementById('upiLinkDisplay').textContent = link;
+      document.getElementById('testUpiResult').style.display = 'block';
+      document.getElementById('upiLinkAnchor').href = link;
+      document.getElementById('upiLinkAnchor').style.display = 'inline-block';
+    }
+
+    function copyUpiLink() {
+      const link = document.getElementById('upiLinkDisplay').textContent;
+      navigator.clipboard.writeText(link).then(() => alert('UPI Link copied!'));
+    }
+
+    function toggleUpiFields() {
+      const enabled = document.getElementById('cfgUpiEnabled').checked;
+      document.getElementById('upiFields').style.display = enabled ? 'block' : 'none';
+    }
+
+    // Services
+    function renderServices(services) {
+      const list = document.getElementById('servicesList');
+      list.innerHTML = (services || []).map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      
+      fetch('/api/business/' + currentConfigBizId + '/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services: [{ name, price, duration }] })
+      }).then(r => r.json()).then(d => {
+        if (d.success) {
+          document.getElementById('newServiceName').value = '';
+          document.getElementById('newServicePrice').value = '';
+          document.getElementById('newServiceDuration').value = '';
+          loadBusinessConfig();
+        } else alert('Error: ' + d.error);
+      });
+    }
+
+    function updateService(idx, el) {
+      // For simplicity, reload on change - in production, use debounced save
+      loadBusinessConfig();
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      // In a real implementation, this would call an API to remove the service
+      loadBusinessConfig();
+    }
+
+    // Staff
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      loadBusinessConfig();
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      loadBusinessConfig();
+    }
+
+    // Working Hours
+    function renderWorkingHours(hours) {
+      const grid = document.getElementById('workingHoursGrid');
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      grid.innerHTML = days.map(day => {
+        const h = hours[day] || { open: '10:00', close: '20:00', closed: day === 'sunday' };
+        return '<div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155;">' +
+          '<label style="font-weight: 600; text-transform: capitalize; display: block; margin-bottom: 8px;">' + day + '</label>' +
+          '<label><input type="checkbox" ' + (h.closed ? 'checked' : '') + ' onchange="updateHours(\\'' + day + '\\', this)"> Closed</label>' +
+          '<div style="display: flex; gap: 8px; margin-top: 8px;">' +
+            '<div style="flex: 1;"><label>Open</label><input type="time" value="' + h.open + '" onchange="updateHoursTime(\\'' + day + '\\', \\'open\\', this)"></div>' +
+            '<div style="flex: 1;"><label>Close</label><input type="time" value="' + h.close + '" onchange="updateHoursTime(\\'' + day + '\\', \\'close\\', this)"></div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function updateHours(day, checkbox) {
+      // In a real implementation, this would save to the database
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would save to the database
+    }
+
+    // Time Off
+    function renderTimeOff(timeOff) {
+      const list = document.getElementById('timeOffList');
+      list.innerHTML = (timeOff || []).map((t, i) => 
+        '<div class="timeoff-row">' +
+          '<strong>' + (t.reason || 'Time Off') + '</strong>: ' + (t.start || '') + ' to ' + (t.end || '') +
+          '<button type="button" class="remove-btn" onclick="removeTimeOff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      // In a real implementation, this would save to the database
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      loadBusinessConfig();
+    }
+
+    function generateTestUpiLink() {
+      const upiId = document.getElementById('cfgUpiId').value;
+      const payee = document.getElementById('cfgUpiPayeeName').value || document.getElementById('cfgUpiPayee').value;
+      const amount = document.getElementById('testUpiAmount').value;
+      const note = document.getElementById('testUpiNote').value;
+      if (!upiId) return alert('Enter UPI ID first');
+      const link = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(payee) + '&am=' + amount + '&cu=INR&tn=' + encodeURIComponent(note);
+      document.getElementById('upiLinkDisplay').textContent = link;
+      document.getElementById('testUpiResult').style.display = 'block';
+      document.getElementById('upiLinkAnchor').href = link;
+      document.getElementById('upiLinkAnchor').style.display = 'inline-block';
+    }
+
+    function copyUpiLink() {
+      const link = document.getElementById('upiLinkDisplay').textContent;
+      navigator.clipboard.writeText(link).then(() => alert('UPI Link copied!'));
+    }
+
+    function toggleUpiFields() {
+      const enabled = document.getElementById('cfgUpiEnabled').checked;
+      document.getElementById('upiFields').style.display = enabled ? 'block' : 'none';
+    }
+
+    // WhatsApp for bookings
+    function openWhatsApp(phone, id, biz, type, details) {
+      const clean = phone.replace(/\\D/g, '');
+      const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
+      window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+    }
+
+    function showUpiPayment(bookingId) {
+      const record = window.__lastRecords?.find(r => r.id === bookingId);
+      if (!record) return alert('Booking not found');
+      const db = JSON.parse(localStorage.getItem('database') || '{}');
+      const biz = db.businesses?.[record.businessId];
+      if (!biz?.upi?.enabled) return alert('UPI not configured for this business');
+      const upiId = biz.upi.upiId;
+      const payee = biz.upi.payeeName;
+      const amount = biz.upi.advanceType === 'percentage' 
+        ? (biz.upi.advanceAmount / 100) * (record.price || 0)
+        : biz.upi.advanceAmount;
+      const link = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(payee) + '&am=' + amount + '&cu=INR&tn=' + encodeURIComponent('Advance for booking ' + bookingId);
+      window.open(link, '_blank');
+    }
+
+    function verifyAdvancePayment(bookingId) {
+      const utr = prompt('Enter UTR Reference Number:');
+      if (!utr) return;
+      fetch('/api/booking/' + bookingId + '/upi/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ utrReference: utr })
+      }).then(r => r.json()).then(d => {
+        if (d.success) {
+          alert('Payment verified! Booking confirmed.');
+          loadBusinessConfig(); // reload to refresh
+        } else alert('Error: ' + d.error);
+      });
+    }
+
+    function showUpiPayment(bookingId) {
+      const record = window.__lastRecords?.find(r => r.id === bookingId);
+      if (!record) return alert('Booking not found');
+      // This would open a modal or redirect to UPI payment
+      alert('UPI payment link would open here for booking ' + bookingId);
+    }
+
+    async function verifyAdvancePayment(id) {
+      const utr = prompt('Enter UTR Reference Number:');
+      if (!utr) return;
+      try {
+        const res = await fetch('/api/booking/' + id + '/upi/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ utrReference: utr })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Payment verified! Booking confirmed.');
+          loadBusinessConfig();
+        } else alert('Error: ' + data.error);
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    // Open WhatsApp with booking confirmation
+    function openWhatsApp(phone, id, biz, type, details) {
+      const clean = phone.replace(/\\D/g, '');
+      const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
+      window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+    }
+
+    async function loadBusinessConfig() {
+      const select = document.getElementById('configBizSelect');
+      const bizId = select.value;
+      if (!bizId) return;
+      try {
+        const res = await fetch('/api/business/' + bizId + '/config');
+        const biz = await res.json();
+        
+        // Profile tab
+        document.getElementById('cfgAdminName').value = biz.adminProfile?.adminName || '';
+        document.getElementById('cfgBusinessName').value = biz.adminProfile?.businessName || biz.name || '';
+        document.getElementById('cfgContactPhone').value = biz.adminProfile?.contactPhone || '';
+        document.getElementById('cfgContactEmail').value = biz.adminProfile?.contactEmail || '';
+        document.getElementById('cfgAddress').value = biz.adminProfile?.address || '';
+        document.getElementById('cfgBio').value = biz.adminProfile?.bio || '';
+
+        // WhatsApp
+        document.getElementById('cfgWaNumber').value = biz.whatsapp?.businessNumber || '';
+        document.getElementById('cfgWaAutoConfirm').checked = biz.whatsapp?.sendConfirmationLink !== false;
+        document.getElementById('cfgWaTemplate').value = biz.whatsapp?.autoConfirmTemplate || 'Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!';
+
+        // Services
+        renderServices(biz.services || []);
+        
+        // Staff
+        renderStaff(biz.staff || []);
+        
+        // Working Hours
+        renderWorkingHours(biz.workingHours || {});
+        
+        // Time Off
+        renderTimeOff(biz.timeOff || []);
+        
+        // UPI
+        document.getElementById('cfgUpiEnabled').checked = biz.upi?.enabled || false;
+        toggleUpiFields();
+        document.getElementById('cfgUpiId').value = biz.upi?.upiId || '';
+        document.getElementById('cfgUpiPayee').value = biz.upi?.payeeName || '';
+        document.getElementById('cfgUpiAmount').value = biz.upi?.advanceAmount || 0;
+        document.getElementById('cfgUpiType').value = biz.upi?.advanceType || 'fixed';
+        document.getElementById('cfgUpiPayeeName').value = biz.upi?.payeeName || '';
+        
+        currentConfigBizId = select.value;
+      } catch (e) { console.error('Failed to load business config:', e); }
+    }
+
+    function renderServices(services) {
+      const list = document.getElementById('servicesList');
+      list.innerHTML = (services || []).map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderWorkingHours(hours) {
+      const grid = document.getElementById('workingHoursGrid');
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      grid.innerHTML = days.map(day => {
+        const h = hours[day] || { open: '10:00', close: '20:00', closed: day === 'sunday' };
+        return '<div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155;">' +
+          '<label style="font-weight: 600; text-transform: capitalize; display: block; margin-bottom: 8px;">' + day + '</label>' +
+          '<label><input type="checkbox" ' + (h.closed ? 'checked' : '') + ' onchange="updateHours(\\'' + day + '\\', this)"> Closed</label>' +
+          '<div style="display: flex; gap: 8px; margin-top: 8px;">' +
+            '<div style="flex: 1;"><label>Open</label><input type="time" value="' + h.open + '" onchange="updateHoursTime(\\'' + day + '\\', \\'open\\', this)"></div>' +
+            '<div style="flex: 1;"><label>Close</label><input type="time" value="' + h.close + '" onchange="updateHoursTime(\\'' + day + '\\', \\'close\\', this)"></div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function updateHours(day, checkbox) {
+      if (currentConfigBizId) {
+        // In a real implementation, this would call an API
+      }
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would call an API
+    }
+
+    function renderTimeOff(timeOff) {
+      const list = document.getElementById('timeOffList');
+      list.innerHTML = (timeOff || []).map((t, i) => 
+        '<div class="timeoff-row">' +
+          '<strong>' + (t.reason || 'Time Off') + '</strong>: ' + (t.start || '') + ' to ' + (t.end || '') +
+          '<button type="button" class="remove-btn" onclick="removeTimeOff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function renderTimeOff(timeOff) {
+      const list = document.getElementById('timeOffList');
+      list.innerHTML = (timeOff || []).map((t, i) => 
+        '<div class="timeoff-row">' +
+          '<strong>' + (t.reason || 'Time Off') + '</strong>: ' + (t.start || '') + ' to ' + (t.end || '') +
+          '<button type="button" class="remove-btn" onclick="removeTimeOff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateHours(day, checkbox) {
+      // In a real implementation, this would call an API
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would call an API
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function updateHours(day, checkbox) {
+      // In a real implementation, this would call an API
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would call an API
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    // Config saving
+    function saveBusinessConfig(section) {
+      if (!currentConfigBizId) return alert('Select a business first');
+      const bizId = currentConfigBizId;
+      
+      let updates = {};
+      if (section === 'profile' || section === 'all') {
+        updates.adminProfile = {
+          adminName: document.getElementById('cfgAdminName').value.trim(),
+          businessName: document.getElementById('cfgBusinessName').value.trim(),
+          contactPhone: document.getElementById('cfgContactPhone').value.trim(),
+          contactEmail: document.getElementById('cfgContactEmail').value.trim(),
+          address: document.getElementById('cfgAddress').value.trim(),
+          bio: document.getElementById('cfgBio').value.trim()
+        };
+      }
+      if (section === 'whatsapp' || section === 'all') {
+        updates.whatsapp = {
+          businessNumber: document.getElementById('cfgWaNumber').value.trim(),
+          sendConfirmationLink: document.getElementById('cfgWaAutoConfirm').checked,
+          autoConfirmTemplate: document.getElementById('cfgWaTemplate').value.trim()
+        };
+      }
+      if (section === 'upi' || section === 'all') {
+        updates.upi = {
+          enabled: document.getElementById('cfgUpiEnabled').checked,
+          upiId: document.getElementById('cfgUpiId').value.trim(),
+          payeeName: document.getElementById('cfgUpiPayee').value.trim(),
+          advanceAmount: parseFloat(document.getElementById('cfgUpiAmount').value) || 0,
+          advanceType: document.getElementById('cfgUpiType').value,
+          payeeName: document.getElementById('cfgUpiPayeeName').value.trim()
+        };
+      }
+      if (section === 'services' || section === 'all') {
+        // Services are saved individually via add/remove
+      }
+      if (section === 'staff' || section === 'all') {
+        // Staff saved individually
+      }
+      if (section === 'hours' || section === 'all') {
+        // Hours saved individually
+      }
+      if (section === 'timeoff' || section === 'all') {
+        // Time off saved individually
+      }
+
+      const payload = { ...updates };
+      fetch('/api/business/' + currentConfigBizId + '/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) showConfigStatus('Saved successfully!');
+        else alert('Error: ' + d.error);
+      })
+      .catch(e => alert('Error: ' + e.message));
+    }
+
+    function saveAllBusinessConfig() {
+      saveBusinessConfig('all');
+    }
+
+    function showConfigStatus(msg) {
+      const el = document.getElementById('configStatus');
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 2000);
+    }
+
+    function toggleUpiFields() {
+      const enabled = document.getElementById('cfgUpiEnabled').checked;
+      document.getElementById('upiFields').style.display = enabled ? 'block' : 'none';
+    }
+
+    function generateTestUpiLink() {
+      const upiId = document.getElementById('cfgUpiId').value;
+      const payee = document.getElementById('cfgUpiPayee').value;
+      const amount = document.getElementById('testUpiAmount').value;
+      const note = document.getElementById('testUpiNote').value;
+      if (!upiId) return alert('Enter UPI ID first');
+      const link = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(payee) + '&am=' + amount + '&cu=INR&tn=' + encodeURIComponent(note);
+      document.getElementById('upiLinkDisplay').textContent = link;
+      document.getElementById('testUpiResult').style.display = 'block';
+      document.getElementById('upiLinkAnchor').href = link;
+      document.getElementById('upiLinkAnchor').style.display = 'inline-block';
+    }
+
+    function copyUpiLink() {
+      const link = document.getElementById('upiLinkDisplay').textContent;
+      navigator.clipboard.writeText(link).then(() => alert('UPI Link copied!'));
+    }
+
+    function toggleUpiFields() {
+      const enabled = document.getElementById('cfgUpiEnabled').checked;
+      document.getElementById('upiFields').style.display = enabled ? 'block' : 'none';
+    }
+
+    function showUpiPayment(bookingId) {
+      const record = window.__lastRecords?.find(r => r.id === bookingId);
+      if (!record) return alert('Booking not found');
+      const db = JSON.parse(localStorage.getItem('database') || '{}');
+      const biz = db.businesses?.[record.businessId];
+      if (!biz?.upi?.enabled) return alert('UPI not configured for this business');
+      const upiId = biz.upi.upiId;
+      const payee = biz.upi.payeeName;
+      const amount = biz.upi.advanceType === 'percentage' 
+        ? (biz.upi.advanceAmount / 100) * (record.price || 0)
+        : biz.upi.advanceAmount;
+      const link = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(payee) + '&am=' + amount + '&cu=INR&tn=' + encodeURIComponent('Advance for booking ' + bookingId);
+      window.open(link, '_blank');
+    }
+
+    function verifyAdvancePayment(bookingId) {
+      const utr = prompt('Enter UTR Reference Number:');
+      if (!utr) return;
+      fetch('/api/booking/' + bookingId + '/upi/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ utrReference: utr })
+      }).then(r => r.json()).then(d => {
+        if (d.success) {
+          alert('Payment verified! Booking confirmed.');
+          loadBusinessConfig();
+        } else alert('Error: ' + d.error);
+      });
+    }
+
+    function openWhatsApp(phone, id, biz, type, details) {
+      const clean = phone.replace(/\\D/g, '');
+      const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
+      window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+    }
+
+    async function loadBusinessConfig() {
+      const select = document.getElementById('configBizSelect');
+      const bizId = select.value;
+      if (!bizId) return;
+      try {
+        const res = await fetch('/api/business/' + bizId + '/config');
+        const biz = await res.json();
+        
+        // Profile tab
+        document.getElementById('cfgAdminName').value = biz.adminProfile?.adminName || '';
+        document.getElementById('cfgBusinessName').value = biz.adminProfile?.businessName || biz.name || '';
+        document.getElementById('cfgContactPhone').value = biz.adminProfile?.contactPhone || '';
+        document.getElementById('cfgContactEmail').value = biz.adminProfile?.contactEmail || '';
+        document.getElementById('cfgAddress').value = biz.adminProfile?.address || '';
+        document.getElementById('cfgBio').value = biz.adminProfile?.bio || '';
+
+        // WhatsApp
+        document.getElementById('cfgWaNumber').value = biz.whatsapp?.businessNumber || '';
+        document.getElementById('cfgWaAutoConfirm').checked = biz.whatsapp?.sendConfirmationLink !== false;
+        document.getElementById('cfgWaTemplate').value = biz.whatsapp?.autoConfirmTemplate || 'Your booking for {{service}} on {{date}} at {{time}} is confirmed. Booking ID: {{bookingId}}. Thank you for choosing {{businessName}}!';
+
+        // Services
+        renderServices(biz.services || []);
+        
+        // Staff
+        renderStaff(biz.staff || []);
+        
+        // Working Hours
+        renderWorkingHours(biz.workingHours || {});
+        
+        // Time Off
+        renderTimeOff(biz.timeOff || []);
+        
+        // UPI
+        document.getElementById('cfgUpiEnabled').checked = biz.upi?.enabled || false;
+        toggleUpiFields();
+        document.getElementById('cfgUpiId').value = biz.upi?.upiId || '';
+        document.getElementById('cfgUpiPayee').value = biz.upi?.payeeName || '';
+        document.getElementById('cfgUpiAmount').value = biz.upi?.advanceAmount || 0;
+        document.getElementById('cfgUpiType').value = biz.upi?.advanceType || 'fixed';
+        document.getElementById('cfgUpiPayeeName').value = biz.upi?.payeeName || '';
+        
+        currentConfigBizId = bizId;
+      } catch (e) { console.error('Failed to load business config:', e); }
+    }
+
+    function renderServices(services) {
+      const list = document.getElementById('servicesList');
+      list.innerHTML = (services || []).map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderWorkingHours(hours) {
+      const grid = document.getElementById('workingHoursGrid');
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      grid.innerHTML = days.map(day => {
+        const h = hours[day] || { open: '10:00', close: '20:00', closed: day === 'sunday' };
+        return '<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;">' +
+          '<label style="font-weight:600;text-transform:capitalize;display:block;margin-bottom:8px;">' + day + '</label>' +
+          '<label><input type="checkbox" ' + (h.closed ? 'checked' : '') + ' onchange="updateHours(\\'' + day + '\\', this)"> Closed</label>' +
+          '<div style="display:flex;gap:8px;margin-top:8px;">' +
+            '<div style="flex:1"><label>Open</label><input type="time" value="' + h.open + '" onchange="updateHoursTime(\\'' + day + '\\',\\'open\\',this)"></div>' +
+            '<div style="flex:1"><label>Close</label><input type="time" value="' + h.close + '" onchange="updateHoursTime(\\'' + day + '\\',\\'close\\',this)"></div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function updateHours(day, checkbox) {
+      if (currentConfigBizId) {
+        // In a real implementation, this would call an API
+      }
+    }
+
+    function updateHoursTime(day, field, input) {
+      if (currentConfigBizId) {
+        // In a real implementation, this would call an API
+      }
+    }
+
+    function renderTimeOff(timeOff) {
+      let list = document.getElementById('timeOffList');
+      list.innerHTML = timeOff.map((t, i) => 
+        '<div class="timeoff-row">' +
+          '<strong>' + (t.reason || 'Time Off') + '</strong>: ' + (t.start || '') + ' to ' + (t.end || '') +
+          '<button type="button" class="remove-btn" onclick="removeTimeOff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      // In a real implementation, this would call an API
+      loadBusinessConfig();
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function updateHours(day, checkbox) {
+      // In a real implementation, this would call an API
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would call an API
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderStaff(staff) {
+      const list = document.getElementById('staffList');
+      list.innerHTML = (staff || []).map((s, i) => 
+        '<div class="staff-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Staff Name" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)">' +
+          '<input type="text" value="' + (s.role || '') + '" placeholder="Role / Specialty" data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="flex: 2;">' +
+          '<select data-idx="' + i + '" onchange="updateStaff(' + i + ', this)" style="width: 120px;">' +
+            '<option value="active" ' + (s.status === 'active' ? 'selected' : '') + '>Active</option>' +
+            '<option value="inactive" ' + (s.status === 'inactive' ? 'selected' : '') + '>Inactive</option>' +
+          '</select>' +
+          '<button type="button" class="remove-btn" onclick="removeStaff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addStaff() {
+      const name = document.getElementById('newStaffName').value.trim();
+      const role = document.getElementById('newStaffRole').value.trim();
+      const status = document.getElementById('newStaffStatus').value;
+      if (!name) return alert('Enter staff name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateStaff(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeStaff(idx) {
+      if (!confirm('Remove this staff member?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function updateHours(day, checkbox) {
+      // In a real implementation, this would call an API
+    }
+
+    function updateHoursTime(day, field, input) {
+      // In a real implementation, this would call an API
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderTimeOff(timeOff) {
+      let list = document.getElementById('timeOffList');
+      list.innerHTML = timeOff.map((t, i) => 
+        '<div class="timeoff-row">' +
+          '<strong>' + (t.reason || 'Time Off') + '</strong>: ' + (t.start || '') + ' to ' + (t.end || '') +
+          '<button type="button" class="remove-btn" onclick="removeTimeOff(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addTimeOff() {
+      const start = document.getElementById('newTimeOffStart').value;
+      const end = document.getElementById('newTimeOffEnd').value;
+      const reason = document.getElementById('newTimeOffReason').value.trim();
+      if (!start || !reason) return alert('Enter start date and reason');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function removeTimeOff(idx) {
+      if (!confirm('Remove this time off?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
+
+    function renderServices(services) {
+      let list = document.getElementById('servicesList');
+      list.innerHTML = services.map((s, i) => 
+        '<div class="service-row">' +
+          '<input type="text" value="' + (s.name || '') + '" placeholder="Service Name" data-idx="' + i + '" onchange="updateService(' + i + ', this)">' +
+          '<input type="number" value="' + (s.price || 0) + '" placeholder="Price (₹)" min="0" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<input type="number" value="' + (s.duration || 30) + '" placeholder="Duration (mins)" min="5" data-idx="' + i + '" onchange="updateService(' + i + ', this)" style="width: 100px;">' +
+          '<button type="button" class="remove-btn" onclick="removeService(' + i + ')">Remove</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    function addService() {
+      const name = document.getElementById('newServiceName').value.trim();
+      const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+      const duration = parseInt(document.getElementById('newServiceDuration').value) || 30;
+      if (!name) return alert('Enter service name');
+      if (!currentConfigBizId) return alert('Select a business first');
+      loadBusinessConfig();
+    }
+
+    function updateService(idx, el) {
+      // In a real implementation, this would call an API
+    }
+
+    function removeService(idx) {
+      if (!confirm('Remove this service?')) return;
+      if (!currentConfigBizId) return;
+      loadBusinessConfig();
+    }
   </script>
 </body>
 </html>`;
@@ -1116,7 +3118,39 @@ function generateLoginPage() {
 </html>`;
 }
 
-// ============ MANIFEST & SW ROUTES ============
+app.get("/manifest.json", (req, res) => { 
+  res.json({ 
+    name: "AI Support and Booking SaaS", 
+    short_name: "AI Agent SaaS", 
+    start_url: "/", 
+    display: "standalone", 
+    background_color: "#0b1120", 
+    theme_color: "#2563eb", 
+    icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] 
+  }); 
+});
+
+app.get("/sw.js", (req, res) => { 
+  res.type("application/javascript"); 
+  res.send("self.addEventListener('fetch', function() {});"); 
+});
+
+app.get("/manifest.json", (req, res) => { 
+  res.json({ 
+    name: "AI Support and Booking SaaS", 
+    short_name: "AI Agent SaaS", 
+    start_url: "/", 
+    display: "standalone", 
+    background_color: "#0b1120", 
+    theme_color: "#2563eb", 
+    icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] 
+  }); 
+});
+
+app.get("/sw.js", (req, res) => { 
+  res.type("application/javascript"); 
+  res.send("self.addEventListener('fetch', function() {});"); 
+});
 
 app.get("/manifest.json", (req, res) => { 
   res.json({ 
