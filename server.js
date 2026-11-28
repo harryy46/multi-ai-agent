@@ -434,16 +434,11 @@ function generateDashboard(user) {
     }
     .accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
     .accordion-content {
-      overflow: hidden;
-      transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
-      max-height: 0;
-      opacity: 0;
-      padding: 0 16px;
+      display: none;
+      padding: 12px 16px 16px;
     }
     .accordion-content.open {
-      max-height: 5000px;
-      opacity: 1;
-      padding: 12px 16px 16px;
+      display: block;
     }
     .accordion-content .card { margin-top: 0; margin-bottom: 12px; }
 
