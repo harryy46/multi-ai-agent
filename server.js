@@ -61,20 +61,20 @@ const defaultData = {
     clinic: {
       name: "",
       type: "Healthcare / Clinic",
-      details: "Timings: Subah 10 AM se Raat 8 PM tak (Sunday band). Doctors: Dr. Sharma (Dentist, Fees ₹500), Dr. Verma (General Physician, Fees ₹400). Address: Shastri Circle, Udaipur.",
-      instructions: "Aap ek polite clinic receptionist hain. Hinglish me baat karein. Patient ki problem samjhein, doctor aur fees batayein, aur appointment book karne ke liye unka Naam, Phone Number, aur Preferred Time maangein."
+      details: "Timings: 10 AM - 8 PM (Sunday closed). Doctors: Dr. Sharma (Dentist, Fees ₹500), Dr. Verma (General Physician, Fees ₹400). Address: Shastri Circle, Udaipur.",
+      instructions: "You are a polite clinic receptionist. Speak in English. Understand the patient's problem, share doctor details and fees, and ask for their Name, Phone Number, and Preferred Time to book an appointment."
     },
     restaurant: {
       name: "",
       type: "Restaurant / Cafe",
-      details: "Timings: 11 AM se 11 PM. Menu: Paneer Tikka (₹240), Dal Makhani (₹220), Woodfire Margherita Pizza (₹350), Cold Coffee (₹120). Home delivery 5km tak free hai.",
-      instructions: "Aap ek friendly restaurant manager hain. Hinglish me baat karein. Menu suggest karein, table booking ya food delivery order lene ke liye Customer ka Naam, Phone, Item/Guests, aur Time/Address maangein."
+      details: "Timings: 11 AM - 11 PM. Menu: Paneer Tikka (₹240), Dal Makhani (₹220), Woodfire Margherita Pizza (₹350), Cold Coffee (₹120). Free home delivery within 5 km.",
+      instructions: "You are a friendly restaurant manager. Speak in English. Suggest menu items, and for table bookings or food delivery orders, ask for Customer Name, Phone, Items/Guests, and Time/Address."
     },
     ecommerce: {
       name: "",
       type: "E-commerce Store",
       details: "Products: Gold-Plated Necklaces (₹1,299), Silver Rings (₹799), Bridal Sets (₹3,499). Shipping: Free all-India delivery (3-5 days). Return Policy: 7-day easy exchange/return.",
-      instructions: "Aap ek helpful e-commerce support executive hain. Hinglish me baat karein. Customers ko jewelry recommend karein, policies batayein, aur order book ya track karne me madad karein."
+      instructions: "You are a helpful e-commerce support executive. Speak in English. Recommend jewelry to customers, explain policies, and help with placing or tracking orders."
     }
   },
   records: [],
@@ -167,7 +167,7 @@ function optionalAuth(req, res, next) {
 
 const saveRecordTool = {
   name: "save_customer_request",
-  description: "Jab customer appointment book kare, restaurant me order/table book kare, ya store par order place kare tab is tool ko call karein.",
+  description: "Call this tool when a customer books an appointment, places a food order or table booking at a restaurant, or places a product order at a store.",
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -295,7 +295,7 @@ app.post('/api/businesses', (req, res) => {
     name,
     type,
     details,
-    instructions: instructions || `Aap ${name} ke polite AI assistant hain. Hinglish me baat karein aur customer ki booking/order ke liye unka Naam, Phone Number, aur Time/Details maangein.`
+    instructions: instructions || `You are a polite AI assistant for ${name}. Speak in English and ask for the customer's Name, Phone Number, and preferred Time/Details to book an appointment or place an order.`
   };
   saveDB(db);
   res.json({ success: true, id, businesses: db.businesses });
@@ -311,7 +311,7 @@ app.post('/api/chat', async (req, res) => {
       Business Name: ${biz.name} (${biz.type})
       Business Details & Pricing: ${biz.details}
       Role & Rules: ${biz.instructions}
-      Important: Jab customer saari zaroori details (Naam, Phone, Time/Items) de de, toh 'save_customer_request' tool call karke booking confirm karein. Jawaab chhota, natural aur helpful rakhein.
+      Important: When the customer provides all required details (Name, Phone, Time/Items), call the 'save_customer_request' tool to confirm the booking. Keep replies short, natural, and helpful.
     `;
 
     const contents = [...history, { role: 'user', parts: [{ text: message }] }];
@@ -521,7 +521,7 @@ function generateDashboard(user) {
         <button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
         <div id="chatBox"></div>
         <div style="display: flex; gap: 8px;">
-          <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
+          <input id="msgInput" placeholder="Type your message here..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
           <button class="primary" id="sendBtn" onclick="sendMsg()" style="width: 90px; margin-top:0;">Send</button>
         </div>
       </div>
@@ -612,20 +612,20 @@ function generateDashboard(user) {
     </button>
     <div id="acc-addbiz" class="accordion-content">
       <div class="card">
-        <h3 class="card-title">Naya Business AI Agent Banayein</h3>
-        <p class="muted">Kisi bhi client ka business details daalein, AI turant uske liye train ho jayega:</p>
+        <h3 class="card-title">Create New Business AI Agent</h3>
+        <p class="muted">Enter your business details below to instantly train your AI booking assistant:</p>
 
         <label>Business Name <span class="muted">(e.g., Royal Men's Salon / FitZone Gym)</span></label>
-        <input id="bName" placeholder="Business ka naam likhein...">
+        <input id="bName" placeholder="Enter business name...">
 
         <label>Category / Type <span class="muted">(e.g., Salon, Gym, Coaching, Real Estate)</span></label>
-        <input id="bType" placeholder="Business category likhein...">
+        <input id="bType" placeholder="Enter business category...">
 
         <label>Services, Pricing, Timings & Address</label>
-        <textarea id="bDetails" rows="4" placeholder="Jaise: Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
+        <textarea id="bDetails" rows="4" placeholder="e.g., Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
 
         <label>AI Behavior / Custom Rules <span class="muted">(Optional)</span></label>
-        <textarea id="bInst" rows="2" placeholder="Jaise: Polite Hinglish me baat karein, service aur time confirm karke booking save karein."></textarea>
+        <textarea id="bInst" rows="2" placeholder="e.g., Use a polite tone, confirm the service and time slot before saving the booking."></textarea>
 
         <button class="primary" onclick="addBusiness()" style="margin-top: 16px;">Save & Launch AI Agent</button>
         <p id="adminMsg" style="font-size: 13px; color: #10b981; margin-top: 10px;"></p>
@@ -697,7 +697,7 @@ function generateDashboard(user) {
       history = [];
       const bizId = document.getElementById('bizSelect').value;
       const bName = allBusinesses[bizId] ? allBusinesses[bizId].name : 'AI Assistant';
-      document.getElementById('chatBox').innerHTML = '<div class="msg bot">Namaste! <b>' + bName + '</b> me aapka swagat hai. Main aapki kaise madad kar sakta hoon?</div>';
+      document.getElementById('chatBox').innerHTML = '<div class="msg bot">Welcome! <b>' + bName + '</b> How can I help you today?</div>';
     }
 
     async function init() {
