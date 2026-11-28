@@ -317,7 +317,7 @@ app.get('/', (req, res) => {
     </div>
 
     <!-- 1. OVERVIEW & STATS -->
-    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-overview" onclick="toggleAccordion('acc-overview', this)">
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-overview" data-target="acc-overview">
       <span>📊 Overview & Stats</span>
       <span class="accordion-icon">▼</span>
     </button>
@@ -343,7 +343,7 @@ app.get('/', (req, res) => {
     </div>
 
     <!-- 2. CHAT & BUSINESS SELECTOR -->
-    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-chat" onclick="toggleAccordion('acc-chat', this)">
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-chat" data-target="acc-chat">
       <span>💬 Chat & Business Selector</span>
       <span class="accordion-icon">▼</span>
     </button>
@@ -361,7 +361,7 @@ app.get('/', (req, res) => {
     </div>
 
     <!-- 3. SAVED BOOKINGS & ORDERS (with toolbar inside) -->
-    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-bookings" onclick="toggleAccordion('acc-bookings', this)">
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-bookings" data-target="acc-bookings">
       <span>📋 Saved Bookings & Orders</span>
       <span class="accordion-icon">▼</span>
     </button>
@@ -381,7 +381,7 @@ app.get('/', (req, res) => {
     </div>
 
     <!-- 4. ADMIN SETUP CENTER -->
-    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-admin-setup" onclick="toggleAccordion('acc-admin-setup', this)">
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-admin-setup" data-target="acc-admin-setup">
       <span>⚙️ Admin Setup Center</span>
       <span class="accordion-icon">▼</span>
     </button>
@@ -439,7 +439,7 @@ app.get('/', (req, res) => {
     </div>
 
     <!-- 5. + ADD BUSINESS (stacked vertically) -->
-    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-addbiz" onclick="toggleAccordion('acc-addbiz', this)">
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-addbiz" data-target="acc-addbiz">
       <span>➕ Add Business</span>
       <span class="accordion-icon">▼</span>
     </button>
@@ -472,12 +472,24 @@ app.get('/', (req, res) => {
     let allBusinesses = {};
     let currentBookingFilter = 'all';
 
-    // Accordion toggle
+    // Accordion toggle - attached via event delegation
     function toggleAccordion(panelId, btn) {
       const panel = document.getElementById(panelId);
+      if (!panel) return;
       const isOpen = panel.classList.toggle('open');
       btn.setAttribute('aria-expanded', String(isOpen));
     }
+
+    // Initialize accordion event delegation
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.addEventListener('click', function(e) {
+        const btn = e.target.closest('.accordion-btn[data-target]');
+        if (btn) {
+          const targetId = btn.getAttribute('data-target');
+          toggleAccordion(targetId, btn);
+        }
+      });
+    });
 
     // Stats
     async function loadStats() {
