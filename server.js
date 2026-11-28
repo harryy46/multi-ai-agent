@@ -26,18 +26,20 @@ const cookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
+// Static file routes
 app.get('/phase1.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase1.js', import.meta.url), 'utf8')));
 app.get('/phase2.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase2.js', import.meta.url), 'utf8')));
 app.get('/phase3.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./phase3.js', import.meta.url), 'utf8')));
-app.get('/admin_profile.js', (req, res) => res.type('application/javascript').send(fs.readFileSync(new URL('./admin_profile.js', import.meta.url), 'utf8')));
 
-
-
-app.get('/.well-known/assetlinks.json',(req,res)=>{res.type('application/json').send("[{\n      \"relation\": [\"delegate_permission/common.handle_all_urls\"],\n      \"target\": {\n        \"namespace\": \"android_app\",\n        \"package_name\": \"com.smartbooking.app\",\n        \"sha256_cert_fingerprints\": [\"36:13:B7:9E:AC:21:CD:E5:C7:A8:A5:69:11:EA:A0:32:B8:7F:16:90:70:FF:A7:EB:66:52:CF:89:25:3E:52:42\"]\n      }\n    }]\n");});
-
-// Serve the modular dashboard at /dashboard
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.type('application/json').send(`[{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.smartbooking.app",
+      "sha256_cert_fingerprints": ["36:13:B7:9E:AC:21:CD:E5:C7:A8:A5:69:11:EA:A0:32:B8:7F:16:90:70:FF:A7:EB:66:52:CF:89:25:3E:52:42"]
+    }
+  }]`);
 });
 
 app.use(express.json());
@@ -53,7 +55,7 @@ const MODELS = [
   'gemini-3.7-flash'
 ];
 
-// Default data agar database.json pehli baar ban rahi ho
+// Default data
 const defaultData = {
   businesses: {
     clinic: {
@@ -79,7 +81,7 @@ const defaultData = {
   users: []
 };
 
-// Database Load & Save Functions (Permanent Storage)
+// Database Load & Save Functions
 function loadDB() {
   if (!fs.existsSync(DB_FILE)) {
     fs.writeFileSync(DB_FILE, JSON.stringify(defaultData, null, 2));
@@ -273,13 +275,16 @@ app.get('/api/auth/me', optionalAuth, (req, res) => {
   }
 });
 
-// API: Saare businesses aur saved bookings fetch karne ke liye
+// ============ EXISTING ROUTES ============
+
 app.get('/api/data', (req, res) => {
   res.json(loadDB());
 });
 
-// API: Admin Panel se naya business add karne ke liye
-app.post('/api/businesses', (req, res) => { const ep=process.env.ADMIN_PIN?process.env.ADMIN_PIN:'4646'; if(req.headers['x-admin-pin']!==ep)return res.status(401).json({error:'Invalid Admin PIN'});
+app.post('/api/businesses', (req, res) => { 
+  const ep = process.env.ADMIN_PIN ? process.env.ADMIN_PIN : '4646'; 
+  if (req.headers['x-admin-pin'] !== ep) return res.status(401).json({error:'Invalid Admin PIN'});
+  
   const { name, type, details, instructions } = req.body;
   if (!name || !type || !details) {
     return res.status(400).json({ error: "Name, Type aur Details zaroori hain!" });
@@ -296,7 +301,6 @@ app.post('/api/businesses', (req, res) => { const ep=process.env.ADMIN_PIN?proce
   res.json({ success: true, id, businesses: db.businesses });
 });
 
-// API: Chat aur Booking
 app.post('/api/chat', async (req, res) => {
   try {
     const { businessId, message, history = [] } = req.body;
@@ -321,7 +325,7 @@ app.post('/api/chat', async (req, res) => {
         timestamp: new Date().toLocaleString('en-IN'),
         ...call.args
       };
-      db.records.unshift(bookingData); // Nayi booking sabse upar save hogi
+      db.records.unshift(bookingData);
       saveDB(db);
 
       const { res: followUp } = await callGeminiWithFallback([
@@ -347,12 +351,18 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// FRONTEND UI — Dark Smart Booking Dashboard with Auth Gate (single-file, server.js)
+// ============ FRONTEND ROUTE ============
+
 app.get('/', optionalAuth, (req, res) => {
-  // If user is logged in, show dashboard; otherwise show login page
   if (req.user) {
-    res.send(`
-<!DOCTYPE html>
+    res.send(generateDashboard(req.user));
+  } else {
+    res.send(generateLoginPage());
+  }
+});
+
+function generateDashboard(user) {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -472,8 +482,8 @@ app.get('/', optionalAuth, (req, res) => {
         <div class="subtitle">Enterprise Booking & Support SaaS — Dark Dashboard</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11px;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px;">• Cloud Synced</span>
-        <span style="font-size:13px;color:#94a3b8;">Welcome, ${req.user.email}</span>
+        <span style="font-size:11px;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px;">● Cloud Synced</span>
+        <span style="font-size:13px;color:#94a3b8;">Welcome, ${user.email}</span>
         <button type="button" onclick="logout()" style="padding:6px 10px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Logout</button>
       </div>
     </div>
@@ -735,7 +745,7 @@ app.get('/', optionalAuth, (req, res) => {
         const data = await res.json();
 
         if (data.reply) {
-          chatBox.innerHTML += '<div class="msg bot">' + data.reply.replace(/\n/g, '<br>') + '</div>';
+          chatBox.innerHTML += '<div class="msg bot">' + data.reply.replace(/\\n/g, '<br>') + '</div>';
           history.push({ role: 'user', parts: [{ text }] });
           history.push({ role: 'model', parts: [{ text: data.reply }] });
         } else if (data.error) {
@@ -778,11 +788,11 @@ app.get('/', optionalAuth, (req, res) => {
           '<div style="font-size:13px;">' + type + ': ' + details + '</div>' +
           '<div class="muted" style="font-size:11px;">' + ts + '</div>' +
           '<div class="bk-actions">' +
-            '<button type="button" class="bk-act-btn confirm" onclick="updateBookingStatus(\'' + id + '\',\'confirmed\')">Confirm</button>' +
-            '<button type="button" class="bk-act-btn complete" onclick="updateBookingStatus(\'' + id + '\',\'completed\')">Complete</button>' +
-            '<button type="button" class="bk-act-btn cancel" onclick="updateBookingStatus(\'' + id + '\',\'cancelled\')">Cancel</button>' +
-            '<button type="button" class="bk-act-btn whatsapp" onclick="openWhatsApp(\'' + phone + '\',\'' + id + '\',\'' + biz + '\',\'' + type + '\',\'' + details + '\')">WhatsApp</button>' +
-            '<button type="button" class="bk-act-btn receipt" onclick="openReceipt(\'' + id + '\',\'' + biz + '\',\'' + name + '\',\'' + phone + '\',\'' + type + '\',\'' + details + '\')">Receipt</button>' +
+            '<button type="button" class="bk-act-btn confirm" onclick="updateBookingStatus(\\'' + id + '\\',\\'confirmed\\')">Confirm</button>' +
+            '<button type="button" class="bk-act-btn complete" onclick="updateBookingStatus(\\'' + id + '\\',\\'completed\\')">Complete</button>' +
+            '<button type="button" class="bk-act-btn cancel" onclick="updateBookingStatus(\\'' + id + '\\',\\'cancelled\\')">Cancel</button>' +
+            '<button type="button" class="bk-act-btn whatsapp" onclick="openWhatsApp(\\'' + phone + '\\',\\'' + id + '\\',\\'' + biz + '\\',\\'' + type + '\\',\\'' + details + '\\')">WhatsApp</button>' +
+            '<button type="button" class="bk-act-btn receipt" onclick="openReceipt(\\'' + id + '\\',\\'' + biz + '\\',\\'' + name + '\\',\\'' + phone + '\\',\\'' + type + '\\',\\'' + details + '\\')">Receipt</button>' +
           '</div>' +
         '</div>';
       }
@@ -827,7 +837,7 @@ app.get('/', optionalAuth, (req, res) => {
     }
 
     function openWhatsApp(phone, id, biz, type, details) {
-      const clean = phone.replace(/\D/g, '');
+      const clean = phone.replace(/\\D/g, '');
       const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
       window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
     }
@@ -939,12 +949,11 @@ app.get('/', optionalAuth, (req, res) => {
     init();
   </script>
 </body>
-</html>
-`);
-  } else {
-    // Not logged in - show login page
-    res.send(`
-<!DOCTYPE html>
+</html>`;
+}
+
+function generateLoginPage() {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1118,41 +1127,30 @@ app.get('/', optionalAuth, (req, res) => {
     document.getElementById('formSignup').addEventListener('submit', handleSignup);
   </script>
 </body>
-</html>
-`);
-  }
+</html>`;
+}
+
+// ============ MANIFEST & SW ROUTES ============
+
+app.get("/manifest.json", (req, res) => { 
+  res.json({ 
+    name: "AI Support and Booking SaaS", 
+    short_name: "AI Agent SaaS", 
+    start_url: "/", 
+    display: "standalone", 
+    background_color: "#0b1120", 
+    theme_color: "#2563eb", 
+    icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] 
+  }); 
 });
-;
-;
 
-app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
-app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
-app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
-app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
-app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
+app.get("/sw.js", (req, res) => { 
+  res.type("application/javascript"); 
+  res.send("self.addEventListener('fetch', function() {});"); 
+});
 
+app.get('/privacy', (req, res) => res.send('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy - Smart Booking</title><style>body{font-family:sans-serif;max-width:720px;margin:30px auto;padding:0 16px;background:#0f172a;color:#e2e8f0;line-height:1.6}h1,h2{color:#38bdf8}</style></head><body><h1>Privacy Policy - Smart Booking (SB)</h1><p>Effective Date: November 2026</p><p>Smart Booking (SB) collects only the information needed to manage business appointments and customer support (business name, customer name, phone number, and booking details).</p><h2>Data Usage & Security</h2><p>Data is stored securely on MongoDB Atlas and is never sold to third parties. WhatsApp messages are opened directly on your device.</p><h2>Contact</h2><p>For data deletion or support, contact Smart Booking Support via the app.</p></body></html>'));
 
-let _col;
-async function getCol(){if(_col)return _col;const c=new MongoClient(process.env.MONGODB_URI);await c.connect();_col=c.db('smartbooking').collection('app_state');return _col;}
-app.get('/api/cloud-state',async(req,res)=>{try{if(!process.env.MONGODB_URI)return res.json({data:{}});const col=await getCol();const doc=await col.findOne({_id:'main'});res.json({data:doc?doc.data:{}});}catch(e){res.status(500).json({error:e.message});}});
-app.post('/api/cloud-state',async(req,res)=>{try{if(!process.env.MONGODB_URI)return res.json({ok:false});const col=await getCol();await col.updateOne({_id:'main'},{$set:{data:req.body.data||{},updatedAt:new Date()}},{upsert:true});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});}});
-
-
-
-
-// === SB PHASE 2 AUTH ===
-const sbMemUsers=[];async function sbGetUsersCol(){if(!process.env.MONGODB_URI)return null;const c=new MongoClient(process.env.MONGODB_URI);await c.connect();return {c,col:c.db('smart_booking').collection('users')};}app.post('/api/auth/signup',express.json(),async(req,res)=>{try{const {businessName,phone,password}=req.body||{};if(!businessName||!phone||!password)return res.status(400).json({ok:false,error:'All fields required'});const cleanPhone=String(phone).trim();const db=await sbGetUsersCol();if(db){const ex=await db.col.findOne({phone:cleanPhone});if(ex){await db.c.close();return res.status(400).json({ok:false,error:'Phone already registered'});}const user={businessName:String(businessName).trim(),phone:cleanPhone,password:String(password),createdAt:new Date()};await db.col.insertOne(user);await db.c.close();return res.json({ok:true,user:{businessName:user.businessName,phone:user.phone}});}else{if(sbMemUsers.find(u=>u.phone===cleanPhone))return res.status(400).json({ok:false,error:'Phone already registered'});const user={businessName,phone:cleanPhone,password};sbMemUsers.push(user);return res.json({ok:true,user:{businessName,phone:cleanPhone}});}}catch(e){res.status(500).json({ok:false,error:'Signup failed'});}});app.post('/api/auth/login',express.json(),async(req,res)=>{try{const {phone,password}=req.body||{};const cleanPhone=String(phone||'').trim();if(cleanPhone==='admin'&&password==='4646')return res.json({ok:true,user:{businessName:'Master Admin',phone:'admin'}});const db=await sbGetUsersCol();if(db){const u=await db.col.findOne({phone:cleanPhone,password:String(password)});await db.c.close();if(!u)return res.status(401).json({ok:false,error:'Invalid phone or password'});return res.json({ok:true,user:{businessName:u.businessName,phone:u.phone}});}else{const u=sbMemUsers.find(x=>x.phone===cleanPhone&&x.password===String(password));if(!u)return res.status(401).json({ok:false,error:'Invalid phone or password'});return res.json({ok:true,user:{businessName:u.businessName,phone:u.phone}});}}catch(e){res.status(500).json({ok:false,error:'Login failed'});}});
-// === END SB PHASE 2 AUTH ===
-
-
-app.get('/privacy',(req,res)=>res.send('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy - Smart Booking</title><style>body{font-family:sans-serif;max-width:720px;margin:30px auto;padding:0 16px;background:#0f172a;color:#e2e8f0;line-height:1.6}h1,h2{color:#38bdf8}</style></head><body><h1>Privacy Policy - Smart Booking (SB)</h1><p>Effective Date: November 2026</p><p>Smart Booking (SB) collects only the information needed to manage business appointments and customer support (business name, customer name, phone number, and booking details).</p><h2>Data Usage & Security</h2><p>Data is stored securely on MongoDB Atlas and is never sold to third parties. WhatsApp messages are opened directly on your device.</p><h2>Contact</h2><p>For data deletion or support, contact Smart Booking Support via the app.</p></body></html>'));
-
-const _sbMemCfg={};const _sbMemWalk=[];function _sbDb(){try{const m=require('mongoose');return m.connection&&m.connection.readyState===1?m.connection.db:null;}catch(e){return null;}}app.get('/api/biz-config',async(req,res)=>{const b=(req.query.b||'default').trim();try{const db=_sbDb();if(db){const doc=await db.collection('sb_biz_configs').findOne({biz:b});if(doc)return res.json(doc);}}catch(e){}res.json(_sbMemCfg[b]||{biz:b,t:'',s:'',u:''});});app.post('/api/biz-config',async(req,res)=>{const b=(req.body&&req.body.biz||'default').trim();const d={biz:b,t:req.body.t||'',s:req.body.s||'',u:req.body.u||'',updatedAt:new Date()};_sbMemCfg[b]=d;try{const db=_sbDb();if(db)await db.collection('sb_biz_configs').updateOne({biz:b},{$set:d},{upsert:true});}catch(e){}res.json({ok:true,data:d});});app.get('/api/walkin-bookings',async(req,res)=>{const b=(req.query.b||'').trim();try{const db=_sbDb();if(db){const q=b?{biz:b}:{};const list=await db.collection('sb_walkins').find(q).sort({createdAt:-1}).limit(50).toArray();return res.json(list);}}catch(e){}res.json(b?_sbMemWalk.filter(x=>x.biz===b):_sbMemWalk);});app.post('/api/walkin-bookings',async(req,res)=>{const d=Object.assign({id:'SB-'+Math.floor(1000+Math.random()*9000),status:'CONFIRMED',createdAt:new Date()},req.body||{});_sbMemWalk.unshift(d);try{const db=_sbDb();if(db)await db.collection('sb_walkins').insertOne(d);}catch(e){}res.json({ok:true,booking:d});});
-
-const _sbOtpStore=new Map();app.post('/api/otp/send',async(req,res)=>{const target=((req.body&&(req.body.target||req.body.phone||req.body.email))||'').trim().toLowerCase();if(!target||target.length<4)return res.status(400).json({error:'Valid mobile number or email required'});const code=String(Math.floor(100000+Math.random()*900000));const expiresAt=Date.now()+5*60*1000;_sbOtpStore.set(target,{code,expiresAt});try{const db=_sbDb();if(db)await db.collection('sb_otps').updateOne({target},{$set:{target,code,expiresAt,createdAt:new Date()}},{upsert:true});}catch(e){}return res.json({ok:true,message:'OTP sent to '+target,devOtp:code});});app.post('/api/otp/verify',async(req,res)=>{const target=((req.body&&(req.body.target||req.body.phone||req.body.email))||'').trim().toLowerCase();const otp=((req.body&&req.body.otp)||'').trim();if(!target||!otp)return res.status(400).json({error:'Target and OTP required'});let rec=_sbOtpStore.get(target);try{const db=_sbDb();if(!rec&&db)rec=await db.collection('sb_otps').findOne({target});}catch(e){}if(!rec)return res.status(400).json({error:'OTP not found. Please request a new OTP.'});if(Date.now()>rec.expiresAt){_sbOtpStore.delete(target);return res.status(400).json({error:'OTP expired. Please resend OTP.'});}if(String(rec.code)!==String(otp))return res.status(400).json({error:'Invalid OTP. Please check and try again.'});_sbOtpStore.delete(target);try{const db=_sbDb();if(db)await db.collection('sb_otps').deleteOne({target});}catch(e){}return res.json({ok:true,verified:true});});
 app.listen(process.env.PORT || 3000, () => {
-  console.log('Multi-Business AI SaaS running at http://localhost:3000');
+  console.log('Smart Booking running at http://localhost:3000');
 });
