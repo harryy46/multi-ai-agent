@@ -23,9 +23,6 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Serve static files (CSS, JS, images) from /public
-app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'allow' }));
-
 app.use(express.json());
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -181,417 +178,603 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// FRONTEND UI (Chat + Live Bookings + Admin Business Builder)
+// FRONTEND UI — Dark Smart Booking Dashboard (single-file, server.js)
 app.get('/', (req, res) => {
   res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Multi-Business AI SaaS</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb"><script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}</script>
-      <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #f8fafc; margin: 0; padding: 16px; }
-        .container { max-width: 960px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-        .tabs { display: flex; gap: 8px; }
-        .tab-btn { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .tab-btn.active { background: #2563eb; border-color: #2563eb; color: white; }
-        .grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #334155; }
-        select, input, textarea, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 14px; margin-top: 6px; }
-        button.primary { background: #2563eb; border: none; cursor: pointer; font-weight: bold; }
-        button.primary:hover { background: #1d4ed8; }
-        #chatBox { height: 340px; overflow-y: auto; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin: 12px 0; background: #0f172a; }
-        .msg { margin-bottom: 10px; padding: 9px 13px; border-radius: 10px; max-width: 82%; line-height: 1.4; font-size: 14px; }
-        .user { background: #2563eb; margin-left: auto; }
-        .bot { background: #334155; }
-        .err { background: #7f1d1d; color: #fecaca; font-size: 12px; }
-        .record { background: #0f172a; padding: 10px; border-left: 4px solid #10b981; margin-bottom: 8px; border-radius: 6px; font-size: 13px; }
-        .hidden { display: none; }
-        label { font-size: 13px; color: #94a3b8; display: block; margin-top: 10px; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Booking — AI Appointment & Business SaaS</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0b1120; color: #f8fafc; margin: 0; padding: 16px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #1e293b; }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .card { background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #334155; }
+    .card-title { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #f8fafc; }
+    select, input, textarea, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; font-size: 14px; margin-top: 6px; }
+    button.primary { background: #2563eb; border: none; cursor: pointer; font-weight: 700; }
+    button.primary:hover { background: #1d4ed8; }
+    button.ghost { background: transparent; border-color: #64748b; color: #cbd5e1; }
+    button.ghost:hover { background: #1e293b; border-color: #94a3b8; }
+    #chatBox { height: 320px; overflow-y: auto; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin: 12px 0; background: #0f172a; }
+    .msg { margin-bottom: 10px; padding: 9px 13px; border-radius: 10px; max-width: 82%; line-height: 1.4; font-size: 14px; }
+    .user { background: #2563eb; margin-left: auto; }
+    .bot { background: #334155; }
+    .err { background: #7f1d1d; color: #fecaca; font-size: 12px; }
+    .record { background: #0f172a; padding: 10px; border-left: 4px solid #10b981; margin-bottom: 8px; border-radius: 6px; font-size: 13px; }
+    .hidden { display: none !important; }
+    label { font-size: 13px; color: #94a3b8; display: block; margin-top: 10px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 140px; }
+    .muted { color: #94a3b8; font-size: 12px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #334155; color: #cbd5e1; }
+    .badge.confirmed { background: rgba(16,185,129,.2); color: #34d399; }
+    .badge.cancelled { background: rgba(239,68,68,.2); color: #f87171; }
+    .badge.pending { background: rgba(234,179,8,.2); color: #facc15; }
 
-        /* Accordion / Collapsible Sections */
-        .accordion-btn {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 12px 16px;
-          background: #0f172a;
-          border: 1px solid #334155;
-          border-radius: 10px;
-          color: #f8fafc;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          text-align: left;
-          transition: background 0.15s ease, border-color 0.15s ease;
-        }
-        .accordion-btn:hover { background: #151d30; border-color: #475569; }
-        .accordion-btn:focus { outline: 2px solid #2563eb; outline-offset: -2px; }
-        .accordion-btn .accordion-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 20px;
-          height: 20px;
-          flex-shrink: 0;
-          transition: transform 0.2s ease;
-          color: #94a3b8;
-        }
-        .accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
-        .accordion-content {
-          overflow: hidden;
-          transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
-          max-height: 0;
-          opacity: 0;
-          padding: 0 16px;
-        }
-        .accordion-content.open {
-          max-height: 2000px; /* large enough for content */
-          opacity: 1;
-          padding: 12px 16px;
-        }
-        .accordion-content .card { margin-top: 0; }
-      </style>
-    <style id="sb-mobile-css">*{box-sizing:border-box;}html,body{max-width:100vw;overflow-x:hidden;}@media(max-width:768px){body{padding:10px!important;font-size:14px!important;}header,main,section,div,form{max-width:100%!important;}[style*="grid-template-columns"],.grid,.row{grid-template-columns:1fr!important;}input,select,textarea,button{width:100%!important;font-size:15px!important;padding:12px!important;}}</style>
+    /* Accordion / Collapsible Sections */
+    .accordion-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      margin-bottom: 10px;
+    }
+    .accordion-btn:hover { background: #151d30; border-color: #475569; }
+    .accordion-btn:focus { outline: 2px solid #2563eb; outline-offset: -2px; }
+    .accordion-btn .accordion-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+      color: #94a3b8;
+    }
+    .accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
+    .accordion-content {
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.2s ease;
+      max-height: 0;
+      opacity: 0;
+      padding: 0 16px;
+    }
+    .accordion-content.open {
+      max-height: 5000px;
+      opacity: 1;
+      padding: 12px 16px 16px;
+    }
+    .accordion-content .card { margin-top: 0; margin-bottom: 12px; }
+
+    /* Bookings toolbar inside accordion */
+    .bk-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .bk-search { flex: 1; min-width: 180px; }
+    .bk-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bk-filter { padding: 5px 10px; border-radius: 999px; border: 1px solid #334155; background: #1e293b; color: #cbd5e1; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .bk-filter.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .bk-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .bk-act-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .bk-act-btn.confirm { background: #16a34a; color: #fff; }
+    .bk-act-btn.complete { background: #2563eb; color: #fff; }
+    .bk-act-btn.cancel { background: #dc2626; color: #fff; }
+    .bk-act-btn.whatsapp { background: #15803d; color: #fff; }
+    .bk-act-btn.receipt { background: #4f46e5; color: #fff; }
+
+    /* Admin Setup Center */
+    .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .setup-grid.full { grid-column: 1 / -1; }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      body { padding: 10px; font-size: 14px; }
+      .row { flex-direction: column; }
+      .row > * { width: 100%; }
+    }
+  </style>
+  <style id="sb-mobile-css">*{box-sizing:border-box;}html,body{max-width:100vw;overflow-x:hidden;}@media(max-width:768px){body{padding:10px!important;font-size:14px!important;}header,main,section,div,form{max-width:100%!important;}[style*="grid-template-columns"],.grid,.row{grid-template-columns:1fr!important;}input,select,textarea,button{width:100%!important;font-size:15px!important;padding:12px!important;}}</style>
 </head>
-    <body><div id="adminLockModal" style="display:none;position:fixed;inset:0;background:#020617;z-index:9999;align-items:center;justify-content:center;padding:20px;"><div style="background:#0f172a;border:1px solid #1e293b;padding:24px;border-radius:14px;max-width:360px;width:100%;text-align:center;color:#f8fafc;"><h2 style="margin:0 0 8px 0;">🔐 SaaS Admin Login</h2><p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Dashboard & Bookings access karne ke liye Admin PIN daalein</p><input id="adminPinInput" type="password" inputmode="numeric" placeholder="Enter Admin PIN" style="width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;text-align:center;font-size:18px;letter-spacing:4px;margin-bottom:12px;"><button onclick="unlockAdmin()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Unlock Dashboard</button><p id="pinErr" style="color:#f87171;font-size:12px;margin-top:10px;"></p></div></div>
-      <div class="container">
-        <div class="header">
-          <h2 style="margin:0; font-size: 20px;"><style>*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif!important}body{margin:0!important;background:#060a14!important;color:#f8fafc!important;padding:0 0 40px!important}.nexa-shell{max-width:920px;margin:0 auto}.nexa-nav{background:rgba(6,10,20,.95);border-bottom:1px solid rgba(148,163,184,.18);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.nexa-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#10b981);display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-right:10px}.nexa-pill{font-size:.72rem;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px}.nexa-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px;margin-bottom:12px}.nexa-kpi{background:#0f172a;border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:10px 12px}body>:not(.nexa-shell) h1{display:none!important}.container,.wrap,.main-wrap,body>div:not(.nexa-shell){max-width:920px!important;margin:0 auto!important;padding:0 12px!important}select,input,textarea{background:#080d18!important;border:1px solid rgba(148,163,184,.25)!important;color:#f8fafc!important;border-radius:10px!important;padding:10px 12px!important}button{border-radius:10px!important;font-weight:700!important;cursor:pointer;transition:transform .14s ease!important}button:active{transform:scale(.95)!important}#ng{position:fixed;inset:0;z-index:99999;background:#060a14;display:flex;align-items:center;justify-content:center;padding:16px}.nb{width:100%;max-width:420px;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:18px;padding:22px;color:#f8fafc}.nh{display:none!important}.nbtn{width:100%;padding:12px 14px!important;margin-bottom:8px!important;text-align:left!important;background:#090f1d!important;color:#f8fafc!important;border:1px solid rgba(148,163,184,.25)!important}.nbtn:hover,.nsel{border-color:#6366f1!important;background:#17223b!important}.npri{width:100%;padding:12px!important;background:linear-gradient(135deg,#4f46e5,#6366f1)!important;color:#fff!important;border:none!important}.nexa-cust-only [class*=admin],.nexa-cust-only [id*=admin],.nexa-cust-only [id*=record],.nexa-cust-only [id*=booking],.nexa-cust-only [class*=booking]{display:none!important}.nexa-admin-only [class*=chat],.nexa-admin-only [id*=chat]{display:none!important}</style><div class=nexa-shell><header class=nexa-nav><div style="display:flex;align-items:center"><span class=nexa-logo>N</span><div><div style="font-weight:800;font-size:1rem">Smart Booking</div><div style="font-size:.68rem;color:#94a3b8">Enterprise Booking & Support SaaS</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class=nexa-pill>● Cloud Synced</span><button type=button onclick=ngReset() style="padding:6px 10px;background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);font-size:.72rem">Switch</button></div></header><section class=nexa-kpis><div class=nexa-kpi><div style="font-size:.62rem;color:#94a3b8;font-weight:700">ACTIVE TENANTS</div><div style="font-size:1.25rem;font-weight:800" id=kpiBiz>1+</div></div><div class=nexa-kpi><div style="font-size:.62rem;color:#94a3b8;font-weight:700">SAVED BOOKINGS</div><div style="font-size:1.25rem;font-weight:800" id=kpiBook>Live</div></div><div class=nexa-kpi><div style="font-size:.62rem;color:#94a3b8;font-weight:700">WHATSAPP ALERTS</div><div style="font-size:1.25rem;font-weight:800">Instant</div></div><div class=nexa-kpi><div style="font-size:.62rem;color:#94a3b8;font-weight:700">AI ENGINE</div><div style="font-size:1.25rem;font-weight:800">24/7</div></div></section></div><div id=ng><div class=nb id=ns1><div style="color:#34d399;font-size:.7rem;font-weight:800">STEP 1 • WELCOME</div><h2 style="margin:6px 0">Welcome to Smart Booking</h2><p style="color:#94a3b8;font-size:.84rem;margin:0 0 14px">Smart AI support & booking workspace.</p><button type=button class=npri onclick=ngStep(2)>Continue</button></div><div class="nb nh" id=ns2><div style="color:#34d399;font-size:.7rem;font-weight:800">STEP 2 • LANGUAGE</div><h2 style="margin:6px 0">Choose Language</h2><button type=button class=nbtn onclick=ngLang("English",this)>English</button><button type=button class=nbtn onclick=ngLang("Hindi",this)>Hindi (हिन्दी)</button><button type=button class=nbtn onclick=ngLang("Hinglish",this)>Hinglish</button><button type=button class=npri onclick=ngStep(3)>Next: Login Panel</button></div><div class="nb nh" id=ns3><div style="color:#34d399;font-size:.7rem;font-weight:800">STEP 3 • LOGIN</div><h2 style="margin:6px 0">Select Login Panel</h2><p id=nlbl style="color:#94a3b8;font-size:.8rem;margin:0 0 12px">Language: Hinglish</p><button type=button class=nbtn onclick=ngOpen("customer")>Customer Login (Customer Page Only)</button><button type=button class=nbtn onclick=ngPin()>Business Admin Login (Admin Page Only)</button><div id=npbox class="nh" style="margin-top:8px"><input type=password id=npin placeholder="Enter Admin PIN" style="width:100%;margin-bottom:8px"><button type=button class=npri onclick=ngVerify()>Verify & Open Admin</button><div id=nperr style="color:#f87171;font-size:.75rem;margin-top:6px"></div></div></div></div><script>window.nLang="Hinglish";function ngStep(n){[1,2,3].forEach(function(k){document.getElementById("ns"+k).classList.toggle("nh",k!==n)});if(n===3)document.getElementById("nlbl").textContent="Language: "+window.nLang}function ngLang(l,b){window.nLang=l;document.querySelectorAll("#ns2 .nbtn").forEach(function(x){x.classList.remove("nsel")});b.classList.add("nsel")}function ngPin(){document.getElementById("npbox").classList.remove("nh");document.getElementById("npin").value="";document.getElementById("nperr").textContent=""}function ngVerify(){if(document.getElementById("npin").value.trim()==="4646")ngOpen("admin");else document.getElementById("nperr").textContent="Invalid Admin PIN"}function ngOpen(r){document.getElementById("ng").style.display="none";document.body.classList.remove("nexa-cust-only","nexa-admin-only");document.body.classList.add(r==="admin"?"nexa-admin-only":"nexa-cust-only");var ip=document.querySelector("input[placeholder*=message],textarea");if(ip)ip.placeholder=window.nLang==="Hindi"?"यहाँ संदेश लिखें...":window.nLang==="English"?"Type message here...":"Hinglish me message likhein..."}function ngReset(){ngStep(1);document.getElementById("npbox").classList.add("nh");document.getElementById("ng").style.display="flex"}</script>AI Support & Booking SaaS</h2>
-          <div class="tabs">
-            <button class="tab-btn active" id="tabChat" onclick="switchTab('chat')">AI Chat & Bookings</button>
-            <button class="tab-btn" id="tabAdmin" onclick="switchTab('admin')">+ Add Business (Admin)</button>
-          </div>
+<body>
+  <div id="adminLockModal" style="display:none;position:fixed;inset:0;background:#020617;z-index:9999;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#0f172a;border:1px solid #1e293b;padding:24px;border-radius:14px;max-width:360px;width:100%;text-align:center;color:#f8fafc;">
+      <h2 style="margin:0 0 8px 0;">🔐 SaaS Admin Login</h2>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Dashboard & Bookings access karne ke liye Admin PIN daalein</p>
+      <input id="adminPinInput" type="password" inputmode="numeric" placeholder="Enter Admin PIN" style="width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;text-align:center;font-size:18px;letter-spacing:4px;margin-bottom:12px;">
+      <button onclick="unlockAdmin()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Unlock Dashboard</button>
+      <p id="pinErr" style="color:#f87171;font-size:12px;margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Smart Booking</h1>
+        <div class="subtitle">Enterprise Booking & Support SaaS — Dark Dashboard</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;font-weight:700;color:#34d399;background:rgba(16,185,129,.14);border:1px solid rgba(52,211,153,.35);padding:4px 10px;border-radius:999px;">● Cloud Synced</span>
+        <button type="button" onclick="location.reload()" style="padding:6px 10px;background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);font-size:12px;border-radius:8px;cursor:pointer;">Refresh</button>
+      </div>
+    </div>
+
+    <!-- 1. OVERVIEW & STATS -->
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-overview" onclick="toggleAccordion('acc-overview', this)">
+      <span>📊 Overview & Stats</span>
+      <span class="accordion-icon">▼</span>
+    </button>
+    <div id="acc-overview" class="accordion-content">
+      <div class="card" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Active Businesses</div>
+          <div style="font-size:28px;font-weight:800;color:#f8fafc;margin-top:4px;" id="statBiz">—</div>
         </div>
-
-        <!-- TAB 1: CHAT & BOOKINGS -->
-        <div id="viewChat" class="grid">
-          <!-- Section 1: Business Selector & Chat -->
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-chat-panel" onclick="toggleAccordion('acc-chat-panel', this)">
-              <span>💬 Chat & Business Selector</span>
-              <span class="accordion-icon">▼</span>
-            </button>
-            <div id="acc-chat-panel" class="accordion-content">
-              <div class="card">
-                <label style="margin-top:0;"><b>Select Active Business:</b></label>
-                <select id="bizSelect" onchange="resetChat()"></select>
-                <button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
-                <div id="chatBox"></div>
-                <div style="display: flex; gap: 8px;">
-                  <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
-                  <button class="primary" id="sendBtn" onclick="sendMsg()" style="width: 90px; margin-top:0;">Send</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Section 2: Saved Bookings & Orders -->
-            <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-bookings-panel" onclick="toggleAccordion('acc-bookings-panel', this)">
-              <span>📋 Saved Bookings & Orders</span>
-              <span class="accordion-icon">▼</span>
-            </button>
-            <div id="acc-bookings-panel" class="accordion-content">
-              <div class="card">
-                <h3 style="margin-top:0;">Saved Bookings & Orders</h3>
-                <p style="font-size: 12px; color: #94a3b8;">Permanent Database (database.json) me safe:</p>
-                <div id="recordsBox" style="max-height: 390px; overflow-y: auto;"></div>
-              </div>
-            </div>
-          </div>
-
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Total Bookings</div>
+          <div style="font-size:28px;font-weight:800;color:#f8fafc;margin-top:4px;" id="statBookings">—</div>
         </div>
-
-        <!-- TAB 2: ADMIN PANEL -->
-        <div id="viewAdmin" class="hidden" style="max-width: 600px; margin: 0 auto;">
-          <button type="button" class="accordion-btn" aria-expanded="true" aria-controls="acc-admin-panel" onclick="toggleAccordion('acc-admin-panel', this)">
-            <span>➕ Add Business (Admin Panel)</span>
-            <span class="accordion-icon">▼</span>
-          </button>
-          <div id="acc-admin-panel" class="accordion-content open">
-            <div class="card">
-              <h3 style="margin-top:0;">Naya Business AI Agent Banayein</h3>
-              <p style="font-size: 13px; color: #94a3b8;">Kisi bhi client ka business details daalein, AI turant uske liye train ho jayega:</p>
-              
-              <label>Business Name (e.g., Royal Men's Salon / FitZone Gym)</label>
-              <input id="bName" placeholder="Business ka naam likhein...">
-
-              <label>Category / Type (e.g., Salon, Gym, Coaching, Real Estate)</label>
-              <input id="bType" placeholder="Business category likhein...">
-
-              <label>Services, Pricing, Timings & Address</label>
-              <textarea id="bDetails" rows="4" placeholder="Jaise: Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
-
-              <label>AI Behavior / Custom Rules (Optional)</label>
-              <textarea id="bInst" rows="2" placeholder="Jaise: Polite Hinglish me baat karein, service aur time confirm karke booking save karein."></textarea>
-
-              <button class="primary" onclick="addBusiness()" style="margin-top: 16px;">Save & Launch AI Agent</button>
-              <p id="adminMsg" style="font-size: 13px; color: #10b981; margin-top: 10px;"></p>
-            </div>
-          </div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">WhatsApp Alerts</div>
+          <div style="font-size:28px;font-weight:800;color:#34d399;margin-top:4px;">Enabled</div>
+        </div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">AI Engine</div>
+          <div style="font-size:28px;font-weight:800;color:#6366f1;margin-top:4px;">24/7</div>
         </div>
       </div>
+    </div>
 
-      <script>
-        let history = [];
-        let allBusinesses = {};
+    <!-- 2. CHAT & BUSINESS SELECTOR -->
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-chat" onclick="toggleAccordion('acc-chat', this)">
+      <span>💬 Chat & Business Selector</span>
+      <span class="accordion-icon">▼</span>
+    </button>
+    <div id="acc-chat" class="accordion-content">
+      <div class="card">
+        <label style="margin-top:0;"><b>Select Active Business:</b></label>
+        <select id="bizSelect" onchange="resetChat()"></select>
+        <button id="copyLinkBtn" type="button" onclick="copyClientLink()" style="margin-top:8px;width:100%;padding:10px;background:#0f172a;color:#38bdf8;border:1px solid #38bdf8;border-radius:8px;font-weight:bold;cursor:pointer;">🔗 Copy Client Shareable Chat Link</button>
+        <div id="chatBox"></div>
+        <div style="display: flex; gap: 8px;">
+          <input id="msgInput" placeholder="Hinglish me message likhein..." style="margin-top:0;" onkeypress="if(event.key==='Enter') sendMsg()">
+          <button class="primary" id="sendBtn" onclick="sendMsg()" style="width: 90px; margin-top:0;">Send</button>
+        </div>
+      </div>
+    </div>
 
-        function switchTab(tab) {
-          document.getElementById('viewChat').classList.toggle('hidden', tab !== 'chat');
-          document.getElementById('viewAdmin').classList.toggle('hidden', tab !== 'admin');
-          document.getElementById('tabChat').classList.toggle('active', tab === 'chat');
-          document.getElementById('tabAdmin').classList.toggle('active', tab === 'admin');
-        }
+    <!-- 3. SAVED BOOKINGS & ORDERS (with toolbar inside) -->
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-bookings" onclick="toggleAccordion('acc-bookings', this)">
+      <span>📋 Saved Bookings & Orders</span>
+      <span class="accordion-icon">▼</span>
+    </button>
+    <div id="acc-bookings" class="accordion-content">
+      <div class="card">
+        <div class="bk-toolbar">
+          <input type="search" id="bkSearch" class="bk-search" placeholder="Search name, phone, ID..." oninput="filterBookings()">
+          <div class="bk-filters">
+            <button type="button" class="bk-filter active" data-status="all" onclick="setBookingFilter('all')">All</button>
+            <button type="button" class="bk-filter" data-status="confirmed" onclick="setBookingFilter('confirmed')">Confirmed</button>
+            <button type="button" class="bk-filter" data-status="cancelled" onclick="setBookingFilter('cancelled')">Cancelled</button>
+            <button type="button" class="bk-filter" data-status="pending" onclick="setBookingFilter('pending')">Pending</button>
+          </div>
+        </div>
+        <div id="recordsBox" style="max-height: 420px; overflow-y: auto;"></div>
+      </div>
+    </div>
 
-        // Accordion toggle function
-        function toggleAccordion(panelId, btn) {
-          const panel = document.getElementById(panelId);
-          const isOpen = panel.classList.toggle('open');
-          btn.setAttribute('aria-expanded', String(isOpen));
-        }
+    <!-- 4. ADMIN SETUP CENTER -->
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-admin-setup" onclick="toggleAccordion('acc-admin-setup', this)">
+      <span>⚙️ Admin Setup Center</span>
+      <span class="accordion-icon">▼</span>
+    </button>
+    <div id="acc-admin-setup" class="accordion-content">
+      <div class="card">
+        <h3 class="card-title">Admin Profile & Workspace Setup</h3>
+        <div class="setup-grid">
+          <div>
+            <label>Admin Name</label>
+            <input id="setupName" placeholder="Your name">
+          </div>
+          <div>
+            <label>Role / Title</label>
+            <input id="setupRole" placeholder="SaaS Owner, Admin, etc.">
+          </div>
+          <div>
+            <label>WhatsApp Alert Number</label>
+            <input id="setupPhone" placeholder="9198XXXXXXXX" type="tel">
+          </div>
+          <div>
+            <label>Support Email</label>
+            <input id="setupEmail" placeholder="admin@domain.com" type="email">
+          </div>
+          <div>
+            <label>Default Active Business</label>
+            <select id="setupDefaultBiz"></select>
+          </div>
+          <div>
+            <label>Admin PIN</label>
+            <input id="setupPin" placeholder="4646" maxlength="8" type="text">
+          </div>
+        </div>
+        <div class="setup-grid" style="margin-top:10px;">
+          <div>
+            <label>Workspace / Brand Label</label>
+            <input id="setupBrand" placeholder="Smart Booking SaaS">
+          </div>
+          <div>
+            <label>Receipt Note / Footer</label>
+            <input id="setupFooter" placeholder="Thank you for your booking!">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#cbd5e1;">
+          <input id="setupAutoWa" type="checkbox" checked style="width:15px;height:15px;cursor:pointer;">
+          <label for="setupAutoWa" style="cursor:pointer;margin:0;">Enable Auto WhatsApp Prompts on Booking / Confirm / Complete / Receipt</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+          <button class="primary" onclick="saveAdminSetup()">Save Setup</button>
+          <button class="ghost" onclick="applyDefaultBusiness()">Switch to Default Business</button>
+          <button class="ghost" onclick="copyAdminUrl()">Copy Admin URL</button>
+          <button class="ghost" onclick="copyClientUrl()">Copy Client Link</button>
+          <span id="setupStatus" style="font-size:12px;color:#34d399;font-weight:600;align-self:center;"></span>
+        </div>
+      </div>
+    </div>
 
-        function renderRecords(records) {
-          const box = document.getElementById('recordsBox');
-          if (!records || records.length === 0) {
-            box.innerHTML = '<p style="color: #64748b; font-size: 13px;">Abhi koi booking nahi hai.</p>';
-            return;
-          }
-          box.innerHTML = records.map(r => 
-            '<div class="record"><b>[' + r.id + '] ' + (r.businessName || r.businessId) + '</b><br>' +
-            'Customer: ' + r.customerName + ' (' + r.phone + ')<br>' +
-            r.requestType + ': ' + r.details + '<br>' +
-            '<span style="color:#64748b; font-size:11px;">' + (r.timestamp || '') + '</span></div>'
-          ).join('');
-        }
+    <!-- 5. + ADD BUSINESS (stacked vertically) -->
+    <button type="button" class="accordion-btn" aria-expanded="false" aria-controls="acc-addbiz" onclick="toggleAccordion('acc-addbiz', this)">
+      <span>➕ Add Business</span>
+      <span class="accordion-icon">▼</span>
+    </button>
+    <div id="acc-addbiz" class="accordion-content">
+      <div class="card">
+        <h3 class="card-title">Naya Business AI Agent Banayein</h3>
+        <p class="muted">Kisi bhi client ka business details daalein, AI turant uske liye train ho jayega:</p>
 
-        function populateDropdown(businesses, selectId) {
-          allBusinesses = businesses;
-          const sel = document.getElementById(selectId || 'bizSelect');
-          const currentVal = sel.value;
-          sel.innerHTML = Object.entries(businesses).map(([id, b]) => 
-            '<option value="' + id + '">' + b.name + ' (' + b.type + ')</option>'
-          ).join('');
-          if (currentVal && businesses[currentVal]) sel.value = currentVal;
-        }
+        <label>Business Name <span class="muted">(e.g., Royal Men's Salon / FitZone Gym)</span></label>
+        <input id="bName" placeholder="Business ka naam likhein...">
 
-        function resetChat() {
-          history = [];
-          const bizId = document.getElementById('bizSelect').value;
-          const bName = allBusinesses[bizId] ? allBusinesses[bizId].name : 'AI Assistant';
-          document.getElementById('chatBox').innerHTML = '<div class="msg bot">Namaste! <b>' + bName + '</b> me aapka swagat hai. Main aapki kaise madad kar sakta hoon?</div>';
-        }
+        <label>Category / Type <span class="muted">(e.g., Salon, Gym, Coaching, Real Estate)</span></label>
+        <input id="bType" placeholder="Business category likhein...">
 
-        async function init() {
-          const res = await fetch('/api/data');
-          const data = await res.json();
-          populateDropdown(data.businesses);
-          renderRecords(data.records);
-          resetChat();
-        }
-        function copyClientLink(){const id=document.getElementById("bizSelect").value;const url=window.location.origin+"/?b="+encodeURIComponent(id);if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>alert("Client Link Copied! "+url)).catch(()=>prompt("Copy link:",url));}else{prompt("Copy link:",url);}} const _origInit=init; init=async function(){await _origInit(); const p=new URLSearchParams(window.location.search).get("b"); if(p && allBusinesses[p]){document.getElementById("bizSelect").value=p; resetChat(); const h=document.querySelector("h1,h2"); if(h)h.innerText=allBusinesses[p].name; const t=document.getElementById("tabAdmin"); if(t&&t.parentElement)t.parentElement.style.display="none"; const s=document.getElementById("bizSelect"); if(s){if(s.previousElementSibling)s.previousElementSibling.style.display="none"; s.style.display="none";} const cb=document.getElementById("copyLinkBtn"); if(cb)cb.style.display="none"; const r=document.getElementById("recordsBox"); if(r&&r.parentElement)r.parentElement.style.display="none";}}; const DEFAULT_PIN="4646"; function checkAdminAuth(){const p=new URLSearchParams(window.location.search).get("b"); if(p) return; const saved=localStorage.getItem("saas_admin_pin"); if(saved!==DEFAULT_PIN){document.getElementById("adminLockModal").style.display="flex";}else{addLockBtn();}} function unlockAdmin(){const val=document.getElementById("adminPinInput").value.trim(); if(val===DEFAULT_PIN){localStorage.setItem("saas_admin_pin",val); document.getElementById("adminLockModal").style.display="none"; addLockBtn();}else{document.getElementById("pinErr").innerText="Galat PIN! Dobara koshish karein.";}} function lockAdmin(){localStorage.removeItem("saas_admin_pin"); location.reload();} function addLockBtn(){if(document.getElementById("lockBtn"))return; const h=document.querySelector("h1,h2"); if(h){const b=document.createElement("button"); b.id="lockBtn"; b.innerText="🔒 Lock"; b.onclick=lockAdmin; b.style.cssText="float:right;background:#1e293b;color:#f87171;border:1px solid #334155;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;"; h.appendChild(b);}} const _origFetch=window.fetch; window.fetch=function(u,o){o=o?o:{}; if(typeof u==="string"&&u.indexOf("/api/business")!==-1){const pin=localStorage.getItem("saas_admin_pin")?localStorage.getItem("saas_admin_pin"):""; o.headers=Object.assign({},o.headers,{"x-admin-pin":pin});} return _origFetch(u,o);}; checkAdminAuth(); init();
+        <label>Services, Pricing, Timings & Address</label>
+        <textarea id="bDetails" rows="4" placeholder="Jaise: Haircut ₹150, Beard ₹100, Facial ₹500. Timings: 9 AM - 9 PM. Location: Sector 4, Udaipur."></textarea>
 
-        async function addBusiness() {
-          const name = document.getElementById('bName').value.trim();
-          const type = document.getElementById('bType').value.trim();
-          const details = document.getElementById('bDetails').value.trim();
-          const instructions = document.getElementById('bInst').value.trim();
-          if (!name || !type || !details) return alert("Please Name, Type aur Details bharein!");
+        <label>AI Behavior / Custom Rules <span class="muted">(Optional)</span></label>
+        <textarea id="bInst" rows="2" placeholder="Jaise: Polite Hinglish me baat karein, service aur time confirm karke booking save karein."></textarea>
 
-          const res = await fetch('/api/businesses', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, type, details, instructions })
-          });
-          const data = await res.json();
-          if (data.success) {
-            populateDropdown(data.businesses);
-            document.getElementById('bizSelect').value = data.id;
-            document.getElementById('bName').value = '';
-            document.getElementById('bType').value = '';
-            document.getElementById('bDetails').value = '';
-            document.getElementById('bInst').value = '';
-            resetChat();
-            switchTab('chat');
-          }
-        }
+        <button class="primary" onclick="addBusiness()" style="margin-top: 16px;">Save & Launch AI Agent</button>
+        <p id="adminMsg" style="font-size: 13px; color: #10b981; margin-top: 10px;"></p>
+      </div>
+    </div>
 
-        async function sendMsg() {
-          const input = document.getElementById('msgInput');
-          const btn = document.getElementById('sendBtn');
-          const text = input.value.trim();
-          if (!text) return;
-          const bizId = document.getElementById('bizSelect').value;
-          
-          const chatBox = document.getElementById('chatBox');
-          chatBox.innerHTML += '<div class="msg user">' + text + '</div>';
-          input.value = '';
-          btn.disabled = true;
-          btn.innerText = '...';
-          chatBox.scrollTop = chatBox.scrollHeight;
+  </div>
 
-          try {
-            const res = await fetch('/api/chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ businessId: bizId, message: text, history })
-            });
-            const data = await res.json();
-            
-            if (data.reply) {
-              chatBox.innerHTML += '<div class="msg bot">' + data.reply.replace(/\\n/g, '<br>') + '</div>';
-              history.push({ role: 'user', parts: [{ text }] });
-              history.push({ role: 'model', parts: [{ text: data.reply }] });
-            } else if (data.error) {
-              chatBox.innerHTML += '<div class="msg err">Error: ' + data.error + '</div>';
-            }
-            if (data.records) renderRecords(data.records);
-          } catch (e) {
-            chatBox.innerHTML += '<div class="msg err">Error: ' + e.message + '</div>';
-          }
-          btn.disabled = false;
-          btn.innerText = 'Send';
-          chatBox.scrollTop = chatBox.scrollHeight;
-        }
-      </script>
-    <style>#nexaAdminBizDash{display:none!important;max-width:920px;margin:0 auto 14px;padding:18px;background:rgba(15,23,42,.95);border:1px solid rgba(99,102,241,.35);border-radius:16px;box-sizing:border-box}.nexa-admin-only #nexaAdminBizDash{display:block!important}.nexa-biz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}@media(max-width:640px){.nexa-biz-grid{grid-template-columns:1fr}}.nexa-biz-full{grid-column:1/-1}#nexaBizStatus{font-size:.78rem;color:#34d399;margin-top:8px;min-height:18px}</style><div id=nexaAdminBizDash><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><div style="font-size:.68rem;font-weight:800;color:#34d399;letter-spacing:.06em">ADMIN WORKSPACE</div><h3 style="margin:2px 0 0;font-size:1.1rem;color:#fff">+ Add Business</h3></div><button type=button onclick=nexaTriggerNativeAddBiz() style="padding:8px 12px;background:#1e293b;color:#e2e8f0;border:1px solid rgba(148,163,184,.25);font-size:.75rem">Open Classic Form</button></div><form id=nexaBizForm onsubmit=nexaSaveAdminBiz(event) class=nexa-biz-grid><input type=text id=bizName placeholder="Business Name (e.g. Royal Salon)" required><input type=text id=bizCat placeholder="Category / Type (e.g. Salon, Clinic, Store)" required><input type=text id=bizPhone placeholder="Phone / WhatsApp Number"><input type=text id=bizCity placeholder="City / Address"><textarea id=bizDesc rows=2 id=bizInfo placeholder="Apne business, timing, services ya offers ke baare mein likhein..." class=nexa-biz-full></textarea><div class=nexa-biz-full style="display:flex;justify-content:flex-end"><button type=submit style="padding:11px 18px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none">+ Save & Add Business</button></div></form><div id=nexaBizStatus></div></div><script>function nexaTriggerNativeAddBiz(){var btns=Array.from(document.querySelectorAll("button"));var t=btns.find(function(b){return /add business/i.test(b.textContent||"")&&b.closest("#nexaAdminBizDash")===null});if(t)t.click();}function nexaSaveAdminBiz(e){e.preventDefault();var name=(document.getElementById("bizName").value||"").trim();var cat=(document.getElementById("bizCat").value||"").trim();var ph=(document.getElementById("bizPhone").value||"").trim();var city=(document.getElementById("bizCity").value||"").trim();var desc=(document.querySelector("#nexaBizForm textarea").value||"").trim();if(!name)return;var label=name+(cat?" ("+cat+")":"");var sel=document.querySelector("select");if(sel){var exists=Array.from(sel.options).some(function(o){return o.value===label||o.text===label});if(!exists){var opt=document.createElement("option");opt.value=label;opt.text=label;sel.appendChild(opt)}sel.value=label;sel.dispatchEvent(new Event("change",{bubbles:true}))}window.nexaLastBusiness={name:name,category:cat,phone:ph,city:city,description:desc,updatedAt:new Date().toISOString()};document.getElementById("nexaBizStatus").textContent="Saved: "+label+(city?" • "+city:"");e.target.reset();}</script><style>.nexa-admin-only [placeholder*=message i],.nexa-admin-only [placeholder*=likhein i],.nexa-admin-only #sendBtn,.nexa-admin-only .nexa-shell+div>div:first-child{display:none!important}</style><style>#nexaBizForm textarea{min-height:76px!important;padding:12px!important;line-height:1.45!important}.nexa-admin-only [placeholder*=message i],.nexa-admin-only [placeholder*=likhein i],.nexa-admin-only #sendBtn,.nexa-admin-only .nexa-shell+div>div:first-child{display:none!important}</style><script>function nexaPurgeDemoBiz(){var demos=["smilecare","spice villa","beautiful jewelry store","healthcare / clinic","restaurant / cafe","e-commerce store"];document.querySelectorAll("select").forEach(function(sel){Array.from(sel.options).forEach(function(opt){var t=((opt.text||"")+" "+(opt.value||"")).toLowerCase();if(demos.some(function(d){return t.indexOf(d)!==-1})){opt.remove()}});if(sel.options.length===0){var ph=document.createElement("option");ph.value="";ph.text="No business saved yet — Add in Admin";sel.appendChild(ph)}})}document.addEventListener("DOMContentLoaded",function(){nexaPurgeDemoBiz();setTimeout(nexaPurgeDemoBiz,400);setTimeout(nexaPurgeDemoBiz,1200)});</script><script>function nexaSyncLangTexts(){var lang=window.nLang||"Hinglish";var walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=walk.nextNode()){if(!n.parentElement||n.parentElement.closest("#ng"))continue;var t=n.nodeValue;if(!t)continue;if(lang==="English"){if(/abhi koi booking/i.test(t))n.nodeValue="No bookings yet.";else if(/me safe/i.test(t))n.nodeValue=t.replace(/me safe/gi,"saved in database")}else if(lang==="Hindi"){if(/abhi koi booking|no bookings yet/i.test(t))n.nodeValue="अभी कोई बुकिंग नहीं है।"}else{if(/no bookings yet|अभी कोई बुकिंग/i.test(t))n.nodeValue="Abhi koi booking nahi hai."}}var ip=document.querySelector("input[placeholder*=message i],input[placeholder*=likhein i],textarea:not(#bizDesc)");if(ip)ip.placeholder=lang==="English"?"Type message here...":lang==="Hindi"?"यहाँ संदेश लिखें...":"Hinglish me message likhein..."}var _ngOpen=window.ngOpen;window.ngOpen=function(r){if(typeof _ngOpen==="function")_ngOpen(r);setTimeout(nexaSyncLangTexts,100)};setInterval(nexaSyncLangTexts,800);</script><script>setInterval(function(){var l=window.nLang||"Hinglish";var nb=l==="English"?"No bookings yet.":l==="Hindi"?"अभी कोई बुकिंग नहीं है।":"Abhi koi booking nahi hai.";var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var n;while(n=w.nextNode()){if(!n.parentElement||n.parentElement.closest("#ng"))continue;var t=n.nodeValue;if(t&&/abhi koi booking|no bookings yet|अभी कोई बुकिंग/i.test(t))n.nodeValue=nb}var ip=document.querySelector("input[placeholder*=message i],input[placeholder*=likhein i],input[placeholder*=संदेश],textarea:not(#nexaBizForm textarea)");if(ip)ip.placeholder=l==="English"?"Type message here...":l==="Hindi"?"यहाँ संदेश लिखें...":"Hinglish me message likhein...";document.querySelectorAll("button").forEach(function(b){if(b.closest("#ng"))return;var x=(b.textContent||"").trim();if(/^send$|^भेजें$/i.test(x))b.textContent=l==="Hindi"?"भेजें":"Send"})},700);</script><script>setInterval(function(){document.querySelectorAll("button,a,[role=button]").forEach(function(el){if(el.closest("#ng,#nexaAdminBizDash"))return;var t=(el.textContent||"").replace(/\s+/g," ").trim();if(/ai chat & bookings/i.test(t)||t.includes('add business')){el.style.setProperty("display","none","important")}})},500);</script><script>setInterval(function(){document.querySelectorAll("button,a").forEach(function(e){var k=(e.textContent||"").toLowerCase();if(k.indexOf("ai chat")===0||k.indexOf("+ add business")===0){e.style.display="none"}})},400);</script><style>.nexa-cust-only .nexa-kpis{display:none!important}#nexaCustBookBox{display:none;max-width:920px;margin:14px auto 0;padding:18px;background:rgba(15,23,42,.95);border:1px solid rgba(99,102,241,.35);border-radius:16px;box-sizing:border-box}.nexa-cust-only #nexaCustBookBox{display:block!important}.nexa-cb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}@media(max-width:640px){.nexa-cb-grid{grid-template-columns:1fr}}.nexa-cb-full{grid-column:1/-1}#nexaCustReceipt{display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,.12);border:1px solid rgba(52,211,153,.35);border-radius:12px;font-size:.82rem;color:#d1fae5}</style><div id='nexaCustBookBox'><div style='font-size:.68rem;font-weight:800;color:#34d399;letter-spacing:.06em'>QUICK BOOKING</div><h3 style='margin:2px 0 0;font-size:1.05rem;color:#fff'>Book Appointment / Order</h3><form id='nexaCustBookForm' onsubmit='nexaSubmitCustBooking(event)' class='nexa-cb-grid'><input type='text' id='cbName' placeholder='Your Name' required><input type='text' id='cbPhone' placeholder='Phone / WhatsApp Number' required><input type='text' id='cbService' placeholder='Service / Item (e.g. Haircut, Checkup)' required><input type='text' id='cbTime' placeholder='Preferred Date & Time (e.g. Today 5 PM)' required><div class='nexa-cb-full' style='display:flex;justify-content:flex-end'><button type='submit' style='padding:11px 18px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none'>Confirm Booking</button></div></form><div id='nexaCustReceipt'></div></div><script>setInterval(function(){if(document.body.classList.contains('nexa-cust-only')){document.querySelectorAll('button,a').forEach(function(b){if(b.closest('#ng,#nexaCustBookBox'))return;var t=(b.textContent||'').toLowerCase();if(t.indexOf('copy client shareable')!==-1){b.style.display='none'}})}},500);function nexaSubmitCustBooking(e){e.preventDefault();var n=(document.getElementById('cbName')||{}).value||'';var p=(document.getElementById('cbPhone')||{}).value||'';var sv=(document.getElementById('cbService')||{}).value||'';var tm=(document.getElementById('cbTime')||{}).value||'';n=n.trim();p=p.trim();sv=sv.trim();tm=tm.trim();var sel=document.querySelector('select');var biz=(sel&&sel.value)?sel.value:'Smart Booking Business';var id='SB-'+Math.floor(1000+Math.random()*9000);var msg=encodeURIComponent('Booking Confirmed ('+id+') | '+biz+' | '+n+' ('+p+') | '+sv+' | Time: '+tm);var box=document.getElementById('nexaCustReceipt');if(box){box.innerHTML='<b>Booking Confirmed! ID: '+id+'</b><br>'+biz+' - '+sv+' ('+tm+')<br><a href="https://wa.me/?text='+msg+'" target="_blank" style="display:inline-block;margin-top:8px;padding:8px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:700">Share Receipt on WhatsApp</a>';box.style.display='block';}if(e.target&&typeof e.target.reset==='function')e.target.reset();}</script><script>setInterval(function(){if(document.body.classList.contains('nexa-cust-only')){document.querySelectorAll('button,a').forEach(function(b){if((b.textContent||'').toLowerCase().indexOf('copy client')>-1)b.style.display='none'});document.querySelectorAll('h2,h3,h4,div').forEach(function(el){if(el.children.length===0&&(el.textContent||'').trim()==='Saved Bookings & Orders'&&el.parentElement)el.parentElement.style.display='none'})}document.querySelectorAll('div,p,span').forEach(function(m){if(m.children.length===0&&(m.textContent||'').toLowerCase().indexOf('smilecare')>-1)m.textContent='Welcome! Select a business above or type your message to start.'})},500);function nexaLoadSavedBiz(){var list=JSON.parse(localStorage.getItem('nexaBizList')||'[]');var sel=document.querySelector('select');if(!sel||!list.length)return;Array.from(sel.options).forEach(function(o){if(!o.value)o.remove()});list.forEach(function(lb){if(!Array.from(sel.options).some(function(o){return o.value===lb})){var o=document.createElement('option');o.value=lb;o.text=lb;sel.appendChild(o)}})}setTimeout(nexaLoadSavedBiz,600);setTimeout(nexaLoadSavedBiz,1500);var _os=window.nexaSaveAdminBiz;window.nexaSaveAdminBiz=function(e){var nm=(document.getElementById('bizName').value||'').trim();var ct=(document.getElementById('bizCat').value||'').trim();if(nm){var lb=nm+(ct?' ('+ct+')':'');var arr=JSON.parse(localStorage.getItem('nexaBizList')||'[]');if(arr.indexOf(lb)===-1){arr.push(lb);localStorage.setItem('nexaBizList',JSON.stringify(arr))}}if(typeof _os==='function')_os(e);nexaLoadSavedBiz()};window.nexaSubmitCustBooking=function(e){e.preventDefault();var n=document.getElementById('cbName').value.trim();var p=document.getElementById('cbPhone').value.trim();var sv=document.getElementById('cbService').value.trim();var tm=document.getElementById('cbTime').value.trim();var sel=document.querySelector('select');var biz=(sel&&sel.value)?sel.value:'Smart Booking Business';var id='SB-'+Math.floor(1000+Math.random()*9000);var msg=encodeURIComponent('Booking Confirmed ('+id+')')+'%0ABusiness: '+encodeURIComponent(biz)+'%0AName: '+encodeURIComponent(n)+'%0APhone: '+encodeURIComponent(p)+'%0AService: '+encodeURIComponent(sv)+'%0ATime: '+encodeURIComponent(tm);var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b>Booking Confirmed! ID: '+id+'</b><br>'+biz+' - '+sv+' ('+tm+')<br><a href=https://wa.me/?text='+msg+' target=_blank style=display:inline-block;margin-top:8px;padding:8px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:700>Share Receipt on WhatsApp</a>';box.style.display='block';e.target.reset()};</script><script>var _svBiz=window.nexaSaveAdminBiz;window.nexaSaveAdminBiz=function(e){var nm=(document.getElementById('bizName').value||'').trim();var ct=(document.getElementById('bizCat').value||'').trim();var ph=(document.getElementById('bizPhone').value||'').replace(/[^0-9]/g,'');if(nm&&ph){var lb=nm+(ct?' ('+ct+')':'');var pm=JSON.parse(localStorage.getItem('nexaBizPhones')||'{}');pm[lb]=ph;localStorage.setItem('nexaBizPhones',JSON.stringify(pm))}if(typeof _svBiz==='function')_svBiz(e)};function nexaRenderAdminBookings(){if(document.body.classList.contains('nexa-cust-only'))return;var list=JSON.parse(localStorage.getItem('nexaBookingsList')||'[]');var box=document.getElementById('nexaAdminBookingsList');if(!box){document.querySelectorAll('h2,h3,h4,div').forEach(function(el){if(!box&&el.children.length===0&&(el.textContent||'').trim()==='Saved Bookings & Orders'&&el.parentElement){box=document.createElement('div');box.id='nexaAdminBookingsList';box.style.marginTop='10px';el.parentElement.appendChild(box)}})}if(!box||!list.length)return;box.innerHTML=list.slice().reverse().map(function(b){return '<div style=padding:10px;margin-top:8px;background:#1e293b;border-radius:10px;font-size:12px;color:#e2e8f0><b>'+b.id+'</b> • '+b.biz+'<br>'+b.name+' ('+b.phone+')<br>'+b.service+' — '+b.time+'</div>'}).join('')}setInterval(nexaRenderAdminBookings,1000);window.nexaSubmitCustBooking=function(e){e.preventDefault();var n=document.getElementById('cbName').value.trim();var p=document.getElementById('cbPhone').value.trim();var sv=document.getElementById('cbService').value.trim();var tm=document.getElementById('cbTime').value.trim();var sel=document.querySelector('select');var biz=(sel&&sel.value)?sel.value:'Smart Booking Business';var id='SB-'+Math.floor(1000+Math.random()*9000);var arr=JSON.parse(localStorage.getItem('nexaBookingsList')||'[]');arr.push({id:id,biz:biz,name:n,phone:p,service:sv,time:tm});localStorage.setItem('nexaBookingsList',JSON.stringify(arr));var pm=JSON.parse(localStorage.getItem('nexaBizPhones')||'{}');var ownerPh=pm[biz]||'';var msg=encodeURIComponent('Booking Confirmed ('+id+')')+'%0ABusiness: '+encodeURIComponent(biz)+'%0AName: '+encodeURIComponent(n)+'%0APhone: '+encodeURIComponent(p)+'%0AService: '+encodeURIComponent(sv)+'%0ATime: '+encodeURIComponent(tm);var waUrl='https://wa.me/'+ownerPh+'?text='+msg;var box=document.getElementById('nexaCustReceipt');box.innerHTML='<b>Booking Confirmed! ID: '+id+'</b><br>'+biz+' - '+sv+' ('+tm+')<br><a href='+waUrl+' target=_blank style=display:inline-block;margin-top:8px;padding:8px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:700>Send Receipt to Owner on WhatsApp</a>';box.style.display='block';e.target.reset();nexaRenderAdminBookings()};</script><script>function nexaBubbleOnly(){var sel=document.querySelector('select');var bz=sel&&sel.value?sel.value:'';var l=window.nLang||'Hinglish';var g=document.querySelector('[data-cg]');if(!g){document.querySelectorAll('b,strong').forEach(function(b){if(!g&&(b.textContent||'').toLowerCase().indexOf('smilecare')>-1&&b.parentElement){b.parentElement.setAttribute('data-cg','1');g=b.parentElement}})}if(!g)return;if(!bz){g.textContent=l==='Hindi'?'नमस्ते! कृपया ऊपर से कोई बिज़नेस चुनें।':l==='English'?'Welcome! Please select a business above.':'Namaste! Kripya upar se koi business select karein.';return}g.textContent=l==='Hindi'?'नमस्ते! '+bz+' में आपका स्वागत है। मैं आपकी क्या मदद कर सकता हूँ?':l==='English'?'Welcome to '+bz+'! How can I help you today?':'Namaste! '+bz+' me aapka swagat hai. Main aapki kaise madad kar sakta hoon?'}setInterval(nexaBubbleOnly,400);document.addEventListener('change',function(e){if(e.target&&e.target.tagName==='SELECT')nexaBubbleOnly()});</script><script>setInterval(function(){document.querySelectorAll("div,span").forEach(function(el){if(el.children.length===0&&(el.textContent||"").trim()==="N"&&el.offsetWidth>20&&el.offsetWidth<60){el.textContent="SB"}})},500);</script><script>(function(){const orig=Storage.prototype.setItem;let t;function push(){clearTimeout(t);t=setTimeout(()=>{const d={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);d[k]=localStorage.getItem(k);}fetch('/api/cloud-state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:d})}).catch(()=>{});},300);}Storage.prototype.setItem=function(k,v){orig.apply(this,arguments);if(this===localStorage)push();};})();</script><script id="sb-ui-polish">(function(){function clean(){document.querySelectorAll('div,p,span').forEach(el=>{if(el.children.length===0&&el.textContent.trim()==='No bookings yet.'){const box=el.parentElement;if(box&&box.innerText.includes('SB-'))el.style.display='none';}if(el.children.length===0&&el.textContent.includes('NX-')){el.textContent=el.textContent.replace(/NX-/g,'SB-');}});}setInterval(clean,800);clean();})();</script><script id="sb-skip-welcome">(function(){if(localStorage.getItem("sb_onboarded")==="1"){const skip=()=>{document.querySelectorAll("button").forEach(b=>{const t=(b.innerText||"").trim();if(t==="Continue"||t==="Next: Login Panel")b.click();});};window.addEventListener("DOMContentLoaded",()=>{skip();setTimeout(skip,200);setTimeout(skip,500);});}document.addEventListener("click",e=>{const b=e.target.closest("button");if(b){const t=(b.innerText||"").trim();if(t==="Next: Login Panel"||t.includes("Login")||t.includes("Admin"))localStorage.setItem("sb_onboarded","1");}});})();</script><style id="sb-phase1-css">body{padding-bottom:84px!important;}.sb-grid-fix{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;width:100%!important;max-width:100%!important;}.sb-bottom-nav{position:fixed;bottom:0;left:0;right:0;height:66px;background:rgba(15,23,42,0.97);backdrop-filter:blur(12px);border-top:1px solid #1e293b;display:flex;justify-content:space-around;align-items:center;z-index:9999;padding-bottom:env(safe-area-inset-bottom);}.sb-nav-btn{background:none;border:none;color:#94a3b8;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;padding:6px 14px;border-radius:10px;}.sb-nav-btn.active{color:#818cf8;background:rgba(99,102,241,0.14);}.sb-nav-ico{font-size:18px;line-height:1;}</style><script id="sb-phase1-js">(function(){function cleanUI(){document.querySelectorAll("p,div,span,small").forEach(el=>{if(el.children.length===0){let t=el.textContent||"";if(t.includes("database.json"))el.textContent="MongoDB Atlas Cloud — Live Synced";if(t.includes("NX-"))el.textContent=t.replace(/NX-/g,"SB-");if((t.includes("Abhi koi booking nahi hai")||t.includes("No bookings yet"))&&document.body.innerText.includes("SB-"))el.style.display="none";}});const cards=Array.from(document.querySelectorAll("div")).find(d=>d.innerText&&d.innerText.includes("ACTIVE TENANTS")&&d.innerText.includes("AI ENGINE")&&d.children.length===4);if(cards)cards.classList.add("sb-grid-fix");}function initNav(){if(document.querySelector(".sb-bottom-nav"))return;const nav=document.createElement("nav");nav.className="sb-bottom-nav";nav.innerHTML="<button class=\x27sb-nav-btn active\x27 data-tab=\x27home\x27><span class=\x27sb-nav-ico\x27>🏠</span><span>Home</span></button><button class=\x27sb-nav-btn\x27 data-tab=\x27bookings\x27><span class=\x27sb-nav-ico\x27>📅</span><span>Bookings</span></button><button class=\x27sb-nav-btn\x27 data-tab=\x27add\x27><span class=\x27sb-nav-ico\x27>➕</span><span>Add Biz</span></button><button class=\x27sb-nav-btn\x27 data-tab=\x27switch\x27><span class=\x27sb-nav-ico\x27>⚙️</span><span>Switch</span></button>";document.body.appendChild(nav);nav.addEventListener("click",e=>{const btn=e.target.closest(".sb-nav-btn");if(!btn)return;nav.querySelectorAll(".sb-nav-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");const tab=btn.dataset.tab;if(tab==="home"){window.scrollTo({top:0,behavior:"smooth"});}else if(tab==="bookings"){const el=Array.from(document.querySelectorAll("h1,h2,h3,div")).find(x=>x.innerText&&x.innerText.trim().startsWith("Saved Bookings"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}else if(tab==="add"){const el=Array.from(document.querySelectorAll("h1,h2,h3,div")).find(x=>x.innerText&&x.innerText.includes("Add Business"));if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}else if(tab==="switch"){const sw=Array.from(document.querySelectorAll("button")).find(b=>(b.innerText||"").trim()==="Switch");if(sw)sw.click();}});}window.addEventListener("DOMContentLoaded",()=>{cleanUI();initNav();setTimeout(cleanUI,500);setTimeout(cleanUI,1500);});})();</script><style id="sb-phase2-css">#sb-auth-overlay{position:fixed;inset:0;background:#0b1120;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;}#sb-auth-card{width:100%;max-width:380px;background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px;color:#fff;font-family:sans-serif;box-shadow:0 20px 40px rgba(0,0,0,0.5);}.sb-auth-tabs{display:flex;gap:8px;margin-bottom:18px;}.sb-auth-tab{flex:1;padding:10px;border-radius:10px;border:1px solid #1e293b;background:#0f172a;color:#94a3b8;font-weight:600;cursor:pointer;}.sb-auth-tab.active{background:#4f46e5;color:#fff;border-color:#4f46e5;}.sb-auth-inp{width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;box-sizing:border-box;font-size:14px;}.sb-auth-btn{width:100%;padding:12px;border-radius:10px;border:none;background:#4f46e5;color:#fff;font-weight:700;font-size:15px;cursor:pointer;}#sb-auth-err{color:#f87171;font-size:13px;margin-bottom:10px;min-height:18px;}</style><script id="sb-phase2-js">(function(){if(location.pathname.includes('chat')||location.search.includes('business')||location.search.includes('b='))return;function showAuth(){if(document.getElementById('sb-auth-overlay'))return;const ov=document.createElement('div');ov.id='sb-auth-overlay';ov.innerHTML='<div id="sb-auth-card"><div style="font-size:12px;color:#34d399;font-weight:700;margin-bottom:4px;">SMART BOOKING (SB)</div><h2 style="margin:0 0 16px 0;font-size:22px;">Business Account</h2><div class="sb-auth-tabs"><button class="sb-auth-tab active" id="sb-tab-login">Login</button><button class="sb-auth-tab" id="sb-tab-signup">Sign Up</button></div><input id="sb-a-biz" class="sb-auth-inp" placeholder="Business Name (e.g. Royal Salon)" style="display:none;"/><input id="sb-a-phone" class="sb-auth-inp" placeholder="Phone Number (or admin)"/><input id="sb-a-pass" type="password" class="sb-auth-inp" placeholder="Password (or PIN 4646)"/><div id="sb-auth-err"></div><button id="sb-a-submit" class="sb-auth-btn">Login to Workspace</button></div>';document.body.appendChild(ov);let mode='login';const tL=document.getElementById('sb-tab-login'),tS=document.getElementById('sb-tab-signup'),biz=document.getElementById('sb-a-biz'),btn=document.getElementById('sb-a-submit'),err=document.getElementById('sb-auth-err');tL.onclick=()=>{mode='login';tL.classList.add('active');tS.classList.remove('active');biz.style.display='none';btn.textContent='Login to Workspace';err.textContent='';};tS.onclick=()=>{mode='signup';tS.classList.add('active');tL.classList.remove('active');biz.style.display='block';btn.textContent='Create Business Account';err.textContent='';};btn.onclick=async()=>{err.textContent='';btn.disabled=true;btn.textContent='Please wait...';try{const r=await fetch(mode==='signup'?'/api/auth/signup':'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({businessName:biz.value,phone:document.getElementById('sb-a-phone').value,password:document.getElementById('sb-a-pass').value})});const d=await r.json();if(d.ok){localStorage.setItem('sb_user',JSON.stringify(d.user));localStorage.setItem('sb_onboarded','1');ov.remove();}else{err.textContent=d.error||'Failed';}}catch(e){err.textContent='Network error';}btn.disabled=false;btn.textContent=mode==='signup'?'Create Business Account':'Login to Workspace';};}window.addEventListener('DOMContentLoaded',()=>{if(!localStorage.getItem('sb_user'))showAuth();document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&((b.innerText||'').trim()==='Switch'||b.dataset.tab==='switch')){if(confirm('Logout from current business account?')){localStorage.removeItem('sb_user');location.reload();}}});});})();</script><style id="sb-phase3-css">.sb-b-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:10px!important;padding-top:8px!important;border-top:1px solid rgba(148,163,184,0.18)!important;width:100%!important;}.sb-b-btn{width:auto!important;min-width:0!important;flex:1 1 auto!important;padding:7px 10px!important;margin:0!important;border-radius:8px!important;border:none!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;color:#fff!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;text-decoration:none!important;}.sb-btn-conf{background:#16a34a!important;}.sb-btn-comp{background:#2563eb!important;}.sb-btn-canc{background:#dc2626!important;}.sb-btn-wa{background:#15803d!important;}.sb-badge{display:inline-block!important;padding:2px 8px!important;border-radius:999px!important;font-size:10px!important;font-weight:700!important;margin-left:6px!important;text-transform:uppercase!important;vertical-align:middle!important;}.sb-st-pending{background:rgba(234,179,8,0.2)!important;color:#facc15!important;}.sb-st-confirmed{background:rgba(34,197,94,0.2)!important;color:#4ade80!important;}.sb-st-completed{background:rgba(59,130,246,0.2)!important;color:#60a5fa!important;}.sb-st-cancelled{background:rgba(239,68,68,0.2)!important;color:#f87171!important;}</style><script id="sb-phase3-js">(function(){const stKey='sb_booking_statuses';function getSt(){try{return JSON.parse(localStorage.getItem(stKey)||'{}');}catch(e){return {};}}function setSt(id,val){const m=getSt();m[id]=val;localStorage.setItem(stKey,JSON.stringify(m));}function enhanceBookings(){const stMap=getSt();document.querySelectorAll('div,li,article,p').forEach(el=>{if(el.dataset.sbDone||el.querySelector('.sb-b-actions'))return;const txt=(el.innerText||'').trim();if(!/(NX|SB)-[0-9]+/.test(txt))return;if(txt.includes('Select Active Business')||txt.includes('Saved Bookings')||txt.includes('Add Business'))return;const hasBlockChild=Array.from(el.children).some(c=>!(/^(STRONG|B|SPAN|BR)$/.test(c.tagName))&&/(NX|SB)-[0-9]+/.test(c.innerText||''));if(hasBlockChild)return;el.dataset.sbDone='1';const walk=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;while(n=walk.nextNode()){if(n.nodeValue&&n.nodeValue.includes('NX-'))n.nodeValue=n.nodeValue.replace(/NX-/g,'SB-');}const idM=(el.innerText||'').match(/SB-[0-9]+/);const bId=idM?idM[0]:'SB-BOOKING';const phM=(el.innerText||'').match(/[0-9]{10}/);const phone=phM?phM[0]:'';const curSt=stMap[bId]||'pending';const badge=document.createElement('span');badge.className='sb-badge sb-st-'+curSt;badge.textContent=curSt;const firstLine=el.querySelector('strong,b')||el;firstLine.appendChild(badge);const bar=document.createElement('div');bar.className='sb-b-actions';const mkBtn=(lbl,cls,st)=>{const b=document.createElement('button');b.type='button';b.className='sb-b-btn '+cls;b.textContent=lbl;b.onclick=()=>{setSt(bId,st);badge.className='sb-badge sb-st-'+st;badge.textContent=st;};return b;};bar.appendChild(mkBtn('Confirm','sb-btn-conf','confirmed'));bar.appendChild(mkBtn('Complete','sb-btn-comp','completed'));bar.appendChild(mkBtn('Cancel','sb-btn-canc','cancelled'));if(phone){const wa=document.createElement('a');wa.className='sb-b-btn sb-btn-wa';wa.target='_blank';const msg=encodeURIComponent('Hello! Your Smart Booking ('+bId+') is Confirmed. Thank you for booking with us!');wa.href='https://wa.me/91'+phone+'?text='+msg;wa.textContent='WhatsApp';bar.appendChild(wa);}el.appendChild(bar);});document.querySelectorAll('p,div,span').forEach(el=>{if(el.children.length===0){const t=(el.textContent||'').trim();if((t.includes('Abhi koi booking nahi hai')||t.includes('No bookings yet'))&&document.body.innerText.includes('SB-'))el.style.display='none';}});}window.addEventListener('DOMContentLoaded',()=>{enhanceBookings();setTimeout(enhanceBookings,600);setTimeout(enhanceBookings,1800);const obs=new MutationObserver(()=>{enhanceBookings();});obs.observe(document.body,{childList:true,subtree:true});});})();</script><style id="sb-phase4-css">body.sb-cust-mode{padding-bottom:20px!important;}body.sb-cust-mode .sb-bottom-nav,body.sb-cust-mode #sb-auth-overlay{display:none!important;}#sb-cust-header{display:flex!important;align-items:center!important;justify-content:space-between!important;background:#0f172a!important;border:1px solid #1e293b!important;border-radius:14px!important;padding:12px 14px!important;margin:0 auto 10px auto!important;max-width:680px!important;color:#fff!important;}#sb-cust-left{display:flex!important;align-items:center!important;gap:10px!important;}#sb-cust-logo{width:36px!important;height:36px!important;border-radius:10px!important;background:linear-gradient(135deg,#4f46e5,#06b6d4)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-weight:800!important;font-size:14px!important;color:#fff!important;}#sb-cust-live{font-size:11px!important;font-weight:700!important;color:#34d399!important;background:rgba(16,185,129,0.14)!important;padding:4px 10px!important;border-radius:999px!important;border:1px solid rgba(52,211,153,0.3)!important;}#sb-quick-wrap{margin:0 auto 14px auto!important;max-width:680px!important;display:flex!important;flex-direction:column!important;gap:8px!important;}.sb-chip-row{display:flex!important;flex-wrap:wrap!important;gap:8px!important;align-items:center!important;}.sb-lang-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;margin:0!important;padding:6px 14px!important;border-radius:999px!important;border:1px solid #334155!important;background:#0f172a!important;color:#cbd5e1!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;}.sb-lang-btn.active{background:#4f46e5!important;color:#fff!important;border-color:#4f46e5!important;}.sb-q-chip{width:auto!important;min-width:0!important;flex:0 0 auto!important;margin:0!important;padding:7px 12px!important;border-radius:10px!important;border:1px solid #334155!important;background:#1e293b!important;color:#e2e8f0!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;}</style><script id="sb-phase4-js">(function(){const params=new URLSearchParams(location.search);const isCust=location.pathname.includes('chat')||params.has('b')||params.has('business')||params.has('client');if(!isCust)return;window.sbSelectedLang=localStorage.getItem('sb_cust_lang')||'en';function autoOpenCust(){document.querySelectorAll('button').forEach(b=>{const t=(b.innerText||'').toLowerCase();if(t.includes('customer login')||t.includes('customer page'))b.click();});}function sendQuick(msg){const inp=document.querySelector('#userInput,#chatInput,input[placeholder*=message i],input[placeholder*=type i],input[type=text],textarea');if(!inp)return;inp.value=msg;inp.dispatchEvent(new Event('input',{bubbles:true}));const btn=Array.from(document.querySelectorAll('button')).find(b=>!b.closest('#sb-quick-wrap')&&/^(send|bhej|submit)/i.test((b.innerText||'').trim()));if(btn){setTimeout(()=>btn.click(),50);}else{inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));}}function initCust(){document.body.classList.add('sb-cust-mode');autoOpenCust();setTimeout(autoOpenCust,400);if(document.getElementById('sb-cust-header'))return;const bizName=params.get('b')||params.get('business')||params.get('name')||'Smart Booking';const hdr=document.createElement('div');hdr.id='sb-cust-header';hdr.innerHTML='<div id="sb-cust-left"><div id="sb-cust-logo">SB</div><div><div style="font-weight:700;font-size:15px;">'+bizName+'</div><div style="font-size:11px;color:#94a3b8;">Instant Booking & Support</div></div></div><div id="sb-cust-live">● 24/7 AI</div>';const qw=document.createElement('div');qw.id='sb-quick-wrap';const chips={en:['Book an Appointment','Services & Prices','Opening Timings'],hi:['Appointment book karna hai','Services aur rates bataye','Timing kya hai?'],hg:['Mujhe booking karni hai','Price list bhejo','Aaj slot available hai?']};qw.innerHTML='<div class="sb-chip-row" id="sb-langs"><button type="button" class="sb-lang-btn active" data-l="en">English</button><button type="button" class="sb-lang-btn" data-l="hi">हिंदी</button><button type="button" class="sb-lang-btn" data-l="hg">Hinglish</button></div><div class="sb-chip-row" id="sb-q-chips"></div>';document.body.prepend(qw);document.body.prepend(hdr);function renderChips(l){window.sbSelectedLang=l;const box=document.getElementById('sb-q-chips');box.innerHTML='';(chips[l]||chips.en).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='sb-q-chip';b.textContent=t;b.onclick=()=>sendQuick(t);box.appendChild(b);});}renderChips(window.sbSelectedLang);document.getElementById('sb-langs').onclick=e=>{const b=e.target.closest('.sb-lang-btn');if(!b)return;document.querySelectorAll('.sb-lang-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderChips(b.dataset.l);};}window.addEventListener('DOMContentLoaded',initCust);})();</script><style id="sb-qr-css">#sb-qr-trigger{width:100%;margin-top:8px;padding:11px 14px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#38bdf8;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}#sb-qr-modal{position:fixed;inset:0;background:rgba(2,6,23,0.85);z-index:10050;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}#sb-qr-box{width:100%;max-width:340px;background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:22px;text-align:center;color:#fff;font-family:sans-serif;box-shadow:0 24px 48px rgba(0,0,0,0.6);}#sb-qr-img-wrap{background:#fff;padding:14px;border-radius:14px;display:inline-block;margin:14px 0;}#sb-qr-img{width:220px;height:220px;display:block;}.sb-qr-btns{display:flex;gap:8px;margin-top:14px;}.sb-qr-btn{flex:1;padding:11px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;color:#fff;}.sb-qr-dl{background:#4f46e5;}.sb-qr-cl{background:#334155;}</style><script id="sb-qr-js">(function(){const p=new URLSearchParams(location.search);if(location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client'))return;function getBiz(){const sel=document.querySelector('select');return (sel&&sel.value)?sel.value.trim():'Smart Booking';}function ensureModal(){if(document.getElementById('sb-qr-modal'))return;const m=document.createElement('div');m.id='sb-qr-modal';m.innerHTML='<div id="sb-qr-box"><div style="font-size:11px;color:#34d399;font-weight:700;letter-spacing:0.5px;">SMART BOOKING (SB)</div><h3 id="sb-qr-title" style="margin:6px 0 2px 0;font-size:18px;"></h3><div style="font-size:12px;color:#94a3b8;">Scan to Book Appointment & Chat 24/7</div><div id="sb-qr-img-wrap"><img id="sb-qr-img" alt="QR Code"/></div><div id="sb-qr-url" style="font-size:11px;color:#64748b;word-break:break-all;"></div><div class="sb-qr-btns"><button type="button" id="sb-qr-dl" class="sb-qr-btn sb-qr-dl">Download QR</button><button type="button" id="sb-qr-cl" class="sb-qr-btn sb-qr-cl">Close</button></div></div>';document.body.appendChild(m);document.getElementById('sb-qr-cl').onclick=()=>m.style.display='none';m.onclick=e=>{if(e.target===m)m.style.display='none';};document.getElementById('sb-qr-dl').onclick=async()=>{const img=document.getElementById('sb-qr-img');const biz=getBiz().replace(/[^a-zA-Z0-9_-]/g,'_');try{const r=await fetch(img.src);const bl=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=biz+'-SmartBooking-QR.png';a.click();}catch(e){window.open(img.src,'_blank');}};}function openQR(){ensureModal();const biz=getBiz();const url=location.origin+'/?b='+encodeURIComponent(biz);const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data='+encodeURIComponent(url);document.getElementById('sb-qr-title').textContent=biz;document.getElementById('sb-qr-img').src=qrSrc;document.getElementById('sb-qr-url').textContent=url;document.getElementById('sb-qr-modal').style.display='flex';}function injectBtn(){if(document.getElementById('sb-qr-trigger'))return;const copyBtn=Array.from(document.querySelectorAll('button')).find(b=>(b.innerText||'').toLowerCase().includes('copy client shareable'));if(!copyBtn)return;const btn=document.createElement('button');btn.type='button';btn.id='sb-qr-trigger';btn.textContent='Show Business QR Code';btn.onclick=openQR;copyBtn.insertAdjacentElement('afterend',btn);}window.addEventListener('DOMContentLoaded',()=>{injectBtn();setTimeout(injectBtn,800);const obs=new MutationObserver(injectBtn);obs.observe(document.body,{childList:true,subtree:true});});})();</script><script id="sb-ui-lang-sync">(function(){const p=new URLSearchParams(location.search);const isCust=location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client');if(!isCust)return;const biz=p.get('b')||p.get('business')||'Smart Booking';const map={en:{name:'English',w:'Hello! Welcome to '+biz+'. How can I help you today?',ph:'Type your message in English...',pre:'[IMPORTANT: Reply strictly in English only. Do NOT use Hindi or Hinglish.] '},hi:{name:'Hindi',w:'नमस्ते! '+biz+' में आपका स्वागत है। मैं आपकी कैसे मदद कर सकता हूँ?',ph:'हिंदी में संदेश लिखें...',pre:'[IMPORTANT: Reply strictly in pure Hindi Devanagari script only. Do NOT use English.] '},hg:{name:'Hinglish',w:'Namaste! '+biz+' me aapka swagat hai. Main aapki kaise madad kar sakta hoon?',ph:'Hinglish me message likhein...',pre:'[IMPORTANT: Reply strictly in natural Hinglish only.] '}};window.sbSelectedLang=localStorage.getItem('sb_cust_lang')||'en';function applyUI(){const l=window.sbSelectedLang||'en';const c=map[l]||map.en;document.querySelectorAll('.sb-lang-btn').forEach(b=>b.classList.toggle('active',b.dataset.l===l));const inp=document.querySelector('#userInput,#chatInput,input[placeholder*=likhein i],input[placeholder*=message i],input[placeholder*=संदेश]');if(inp&&inp.placeholder!==c.ph)inp.placeholder=c.ph;document.querySelectorAll('div,p,span').forEach(el=>{if(el.children.length===0){const t=(el.textContent||'').trim();if((t.includes('swagat hai')||t.includes('Welcome to')||t.includes('स्वागत है'))&&t!==c.w)el.textContent=c.w;}});}document.addEventListener('click',function(e){const b=e.target.closest('.sb-lang-btn');if(!b||!b.dataset.l)return;window.sbSelectedLang=b.dataset.l;localStorage.setItem('sb_cust_lang',b.dataset.l);setTimeout(applyUI,30);});const origFetch=window.fetch;window.fetch=function(url,init){try{if(init&&init.method&&init.method.toUpperCase()==='POST'&&typeof init.body==='string'&&!String(url).includes('/api/auth/')){const d=JSON.parse(init.body);const c=map[window.sbSelectedLang]||map.en;const k=d.message?'message':(d.prompt?'prompt':(d.text?'text':null));if(k&&typeof d[k]==='string'&&!d[k].includes('[IMPORTANT:'))d[k]=c.pre+d[k];d.language=c.name;d.lang=c.name;init=Object.assign({},init,{body:JSON.stringify(d)});}}catch(e){}return origFetch.call(this,url,init);};window.addEventListener('DOMContentLoaded',()=>{applyUI();const obs=new MutationObserver(()=>applyUI());obs.observe(document.body,{childList:true,subtree:true});});})();</script><style id="sb-pro-css">#sb-pro-bar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px 0;}.sb-pro-btn{width:auto!important;flex:1 1 auto!important;min-width:90px!important;padding:7px 10px!important;border-radius:10px!important;border:1px solid #334155!important;background:#1e293b!important;color:#38bdf8!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;}#sb-booking-filters{margin:6px 0 12px 0;display:flex;flex-direction:column;gap:8px;}#sb-bk-search{width:100%;box-sizing:border-box;padding:8px 11px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:12px;outline:none;}#sb-bk-tabs{display:flex;flex-wrap:wrap;gap:5px;}.sb-f-tab{width:auto!important;flex:0 0 auto!important;padding:5px 10px!important;border-radius:999px!important;border:1px solid #334155!important;background:#0f172a!important;color:#cbd5e1!important;font-size:11px!important;font-weight:700!important;cursor:pointer!important;}.sb-f-tab.active{background:#4f46e5!important;color:#fff!important;border-color:#4f46e5!important;}#sb-bk-empty{display:none;text-align:center;padding:12px;color:#94a3b8;font-size:12px;border:1px dashed #334155;border-radius:10px;}#sb-pro-modal{position:fixed;inset:0;background:rgba(2,6,23,0.85);z-index:10060;display:none;align-items:center;justify-content:center;padding:16px;}#sb-pro-box{width:100%;max-width:400px;max-height:85vh;overflow-y:auto;background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:18px;color:#fff;font-family:sans-serif;}.sb-pro-inp{width:100%;box-sizing:border-box;margin:6px 0 10px 0;padding:9px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:13px;}.sb-crm-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid #1e293b;border-radius:10px;margin-bottom:8px;background:#1e293b;}</style><script id="sb-pro-js">(function(){const p=new URLSearchParams(location.search);if(location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client'))return;let stF='all';const NL=String.fromCharCode(10);function findHdr(){return Array.from(document.querySelectorAll('h1,h2,h3,h4,div,p,span')).find(e=>{if(e.children.length>0)return false;const t=(e.textContent||'').toLowerCase();return t.includes('saved bookings')&&t.includes('orders');});}function getItems(c){const a=Array.from(c.querySelectorAll('div,li')).filter(e=>{if(e.closest('#sb-booking-filters,#sb-pro-bar'))return false;const t=e.textContent||'';return t.includes('SB-')&&e.querySelector('button')&&!t.toLowerCase().includes('saved bookings');});return a.filter(e=>!a.some(o=>o!==e&&e.contains(o)));}function applyF(){const h=findHdr();if(!h)return;const c=h.closest('section,div');if(!c)return;const q=((document.getElementById('sb-bk-search')||{}).value||'').trim().toLowerCase();const it=getItems(c);let n=0;it.forEach(i=>{const t=(i.innerText||'').toLowerCase();let st='pending';if(t.includes('confirmed'))st='confirmed';else if(t.includes('completed'))st='completed';else if(t.includes('cancelled'))st='cancelled';const v=(!q||t.includes(q))&&(stF==='all'||st===stF);i.style.display=v?'':'none';if(v)n++;});const em=document.getElementById('sb-bk-empty');if(em)em.style.display=(it.length>0&&n===0)?'block':'none';}function modal(t,h){let m=document.getElementById('sb-pro-modal');if(!m){m=document.createElement('div');m.id='sb-pro-modal';m.innerHTML='<div id="sb-pro-box"><div style="display:flex;justify-content:space-between;margin-bottom:10px;"><b id="sb-pro-t"></b><button type="button" id="sb-pro-x" style="width:auto;padding:2px 8px;background:#334155;color:#fff;border:none;border-radius:6px;">X</button></div><div id="sb-pro-c"></div></div>';document.body.appendChild(m);document.getElementById('sb-pro-x').onclick=()=>m.style.display='none';}document.getElementById('sb-pro-t').textContent=t;document.getElementById('sb-pro-c').innerHTML=h;m.style.display='flex';}function rows(){const h=findHdr();return h?getItems(h.closest('section,div')).map(e=>(e.innerText||'').split(NL).join(' | ').trim()):[];}function cfg(){const c=JSON.parse(localStorage.getItem('sb_biz_cfg')||'{}');modal('Shop & UPI','<input id="sb-ct" class="sb-pro-inp" placeholder="Timings (10AM-8PM)" value="'+(c.t||'')+'"/><textarea id="sb-cs" class="sb-pro-inp" placeholder="Services & Prices">'+(c.s||'')+'</textarea><input id="sb-cu" class="sb-pro-inp" placeholder="UPI ID (shop@okaxis)" value="'+(c.u||'')+'"/><button type="button" id="sb-csave" style="width:100%;padding:9px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:700;">Save</button>');document.getElementById('sb-csave').onclick=()=>{localStorage.setItem('sb_biz_cfg',JSON.stringify({t:document.getElementById('sb-ct').value,s:document.getElementById('sb-cs').value,u:document.getElementById('sb-cu').value}));alert('Saved!');document.getElementById('sb-pro-modal').style.display='none';};}function crm(){const m={};rows().forEach(r=>{const ph=r.split(/[^0-9]/).find(x=>x.length===10);if(ph)m[ph]=(m[ph]||0)+1;});const k=Object.keys(m);modal('Customers ('+k.length+')',k.length?k.map(ph=>'<div class="sb-crm-row"><span>+91 '+ph+' ('+m[ph]+' visits)</span><a target="_blank" href="https://wa.me/91'+ph+'?text=Hello!%20Special%20offer!" style="padding:5px 8px;background:#16a34a;color:#fff;border-radius:6px;font-size:11px;text-decoration:none;">Offer</a></div>').join(''):'No customers yet.');}function csv(){const r=rows();if(!r.length)return alert('No bookings');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['Booking'+NL+r.map(x=>'"'+x.split('"').join('""')+'"').join(NL)],{type:'text/csv'}));a.download='SmartBooking.csv';a.click();}function init(){const h=findHdr();if(!h||document.getElementById('sb-pro-bar'))return;const w=document.createElement('div');w.innerHTML='<div id="sb-pro-bar"><button type="button" class="sb-pro-btn" id="sb-b-cfg">Shop & UPI</button><button type="button" class="sb-pro-btn" id="sb-b-crm">Customers</button><button type="button" class="sb-pro-btn" id="sb-b-csv">Export CSV</button></div><div id="sb-booking-filters"><input id="sb-bk-search" type="search" autocomplete="new-password" placeholder="Search name, phone, SB-ID..."/><div id="sb-bk-tabs"><button type="button" class="sb-f-tab active" data-s="all">All</button><button type="button" class="sb-f-tab" data-s="pending">Pending</button><button type="button" class="sb-f-tab" data-s="confirmed">Confirmed</button><button type="button" class="sb-f-tab" data-s="completed">Completed</button><button type="button" class="sb-f-tab" data-s="cancelled">Cancelled</button></div><div id="sb-bk-empty">No matching bookings.</div></div>';h.insertAdjacentElement('afterend',w);document.getElementById('sb-b-cfg').onclick=cfg;document.getElementById('sb-b-crm').onclick=crm;document.getElementById('sb-b-csv').onclick=csv;document.getElementById('sb-bk-search').oninput=applyF;document.getElementById('sb-bk-tabs').onclick=e=>{const b=e.target.closest('.sb-f-tab');if(!b)return;stF=b.dataset.s;document.querySelectorAll('.sb-f-tab').forEach(x=>x.classList.toggle('active',x===b));applyF();};}window.addEventListener('DOMContentLoaded',()=>{init();setTimeout(init,800);new MutationObserver(()=>{init();applyF();}).observe(document.body,{childList:true,subtree:true});});})();</script><script id="sb-iso-walkin">(function(){const p=new URLSearchParams(location.search);const isCust=location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client');if(isCust){const biz=(p.get('b')||p.get('business')||'').trim();window._sbBizCfg=null;if(biz)fetch('/api/biz-config?b='+encodeURIComponent(biz)).then(r=>r.json()).then(d=>{window._sbBizCfg=d;}).catch(()=>{});const oF=window.fetch;window.fetch=function(u,i){try{if(window._sbBizCfg&&i&&i.method&&i.method.toUpperCase()==='POST'&&typeof i.body==='string'&&!String(u).includes('/api/auth/')&&!String(u).includes('/api/biz-config')){const c=window._sbBizCfg;if(c.t||c.s||c.u){const d=JSON.parse(i.body);const k=d.message?'message':(d.prompt?'prompt':(d.text?'text':null));if(k&&typeof d[k]==='string'&&!d[k].includes('[BIZ_INFO:')){d[k]='[BIZ_INFO for '+biz+' -> Timings: '+(c.t||'N/A')+' | Services & Prices: '+(c.s||'N/A')+' | UPI: '+(c.u||'N/A')+'. Use these exact details when answering.] '+d[k];i=Object.assign({},i,{body:JSON.stringify(d)});}}}}catch(e){}return oF.call(this,u,i);};return;}function getBiz(){const sel=document.querySelector('select');return(sel&&sel.value)?sel.value.trim():'Default';}function openBox(t,h){let m=document.getElementById('sb-pro-modal');if(!m){m=document.createElement('div');m.id='sb-pro-modal';m.innerHTML='<div id="sb-pro-box"><div style="display:flex;justify-content:space-between;margin-bottom:10px;"><b id="sb-pro-t"></b><button type="button" id="sb-pro-x" style="width:auto;padding:2px 8px;background:#334155;color:#fff;border:none;border-radius:6px;">X</button></div><div id="sb-pro-c"></div></div>';document.body.appendChild(m);document.getElementById('sb-pro-x').onclick=()=>m.style.display='none';}document.getElementById('sb-pro-t').textContent=t;document.getElementById('sb-pro-c').innerHTML=h;m.style.display='flex';}async function openBizCfg(){const biz=getBiz();const c=await fetch('/api/biz-config?b='+encodeURIComponent(biz)).then(r=>r.json()).catch(()=>({}));openBox('Shop & UPI: '+biz,'<div style="font-size:11px;color:#34d399;margin-bottom:6px;">Cloud Synced with AI for '+biz+'</div><input id="sb-ct" class="sb-pro-inp" placeholder="Timings (e.g. 10AM-8PM, Mon Off)" value="'+(c.t||'')+'"/><textarea id="sb-cs" class="sb-pro-inp" rows="3" placeholder="Services & Prices (Haircut Rs 150)">'+(c.s||'')+'</textarea><input id="sb-cu" class="sb-pro-inp" placeholder="UPI ID (shop@okaxis)" value="'+(c.u||'')+'"/><button type="button" id="sb-csave" style="width:100%;padding:9px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Save & Connect to AI</button>');document.getElementById('sb-csave').onclick=async()=>{await fetch('/api/biz-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({biz,t:document.getElementById('sb-ct').value,s:document.getElementById('sb-cs').value,u:document.getElementById('sb-cu').value})});alert('Saved & Synced to AI for '+biz+'!');document.getElementById('sb-pro-modal').style.display='none';};}function renderWalkins(list){let box=document.getElementById('sb-walkin-list');const flt=document.getElementById('sb-booking-filters');if(!flt)return;if(!box){box=document.createElement('div');box.id='sb-walkin-list';flt.insertAdjacentElement('afterend',box);}box.innerHTML=list.map(b=>'<div style="padding:10px;margin:8px 0;border-radius:10px;background:#1e293b;border:1px solid #334155;font-size:12px;"><div><b>'+b.id+'</b> <span style="background:#16a34a;color:#fff;padding:2px 6px;border-radius:6px;font-size:10px;">'+(b.status||'CONFIRMED')+'</span> • '+b.biz+' (Walk-in)</div><div style="margin:4px 0;">'+b.name+' ('+b.phone+') — '+b.service+' • '+b.time+'</div><a target="_blank" href="https://wa.me/91'+b.phone+'?text='+encodeURIComponent('Booking Confirmed! ID: '+b.id+' at '+b.biz+' for '+b.service+' ('+b.time+')')+'" style="display:inline-block;padding:4px 10px;background:#16a34a;color:#fff;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">WhatsApp</a></div>').join('');}function loadWalkins(){fetch('/api/walkin-bookings?b='+encodeURIComponent(getBiz())).then(r=>r.json()).then(renderWalkins).catch(()=>{});}function openWalkin(){const biz=getBiz();openBox('+ Manual Walk-in: '+biz,'<input id="sb-wn" class="sb-pro-inp" placeholder="Customer Name"/><input id="sb-wp" class="sb-pro-inp" placeholder="10-digit Phone Number"/><input id="sb-ws" class="sb-pro-inp" placeholder="Service (e.g. Haircut)"/><input id="sb-wt" class="sb-pro-inp" placeholder="Date & Time (e.g. Today 6 PM)"/><button type="button" id="sb-wsave" style="width:100%;padding:9px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Save Walk-in Booking</button>');document.getElementById('sb-wsave').onclick=async()=>{const name=document.getElementById('sb-wn').value.trim(),phone=document.getElementById('sb-wp').value.trim(),service=document.getElementById('sb-ws').value.trim(),time=document.getElementById('sb-wt').value.trim();if(!name||!phone)return alert('Name and Phone required!');await fetch('/api/walkin-bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({biz,name,phone,service:service||'Walk-in',time:time||'Now'})});document.getElementById('sb-pro-modal').style.display='none';loadWalkins();};}function hook(){const bar=document.getElementById('sb-pro-bar');if(!bar)return;const cfgBtn=document.getElementById('sb-b-cfg');if(cfgBtn&&!cfgBtn.dataset.iso){cfgBtn.dataset.iso='1';cfgBtn.onclick=openBizCfg;}if(!document.getElementById('sb-b-walk')){const b=document.createElement('button');b.type='button';b.id='sb-b-walk';b.className='sb-pro-btn';b.style.color='#34d399';b.textContent='+ Walk-in';b.onclick=openWalkin;bar.prepend(b);loadWalkins();}const sel=document.querySelector('select');if(sel&&!sel.dataset.iso){sel.dataset.iso='1';sel.addEventListener('change',loadWalkins);}}window.addEventListener('DOMContentLoaded',()=>{hook();setTimeout(hook,900);new MutationObserver(hook).observe(document.body,{childList:true,subtree:true});});})();</script><script id="sb-onboard-all">(function(){const p=new URLSearchParams(location.search);if(location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client'))return;function saveCfg(name,cat,t,sv,u){if(!name||(!t&&!sv&&!u))return;const list=[name];if(cat)list.push(name+' ('+cat+')');list.forEach(biz=>{fetch('/api/biz-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({biz,t,s:sv,u})}).catch(()=>{});});}function inject(btn,idPre){if(!btn||document.getElementById(idPre+'-wrap'))return;const w=document.createElement('div');w.id=idPre+'-wrap';w.style.cssText='grid-column:1 / -1;width:100%;display:grid;grid-template-columns:1fr;gap:8px;margin:6px 0;';w.innerHTML='<input id="'+idPre+'-t" placeholder="Opening Timings & Weekly Off (e.g. 10 AM - 8 PM, Mon Off)" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;"/><textarea id="'+idPre+'-s" rows="2" placeholder="Services & Prices (e.g. Haircut Rs 150, Beard Rs 80)" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;font-family:inherit;"></textarea><input id="'+idPre+'-u" placeholder="UPI ID for Payments (e.g. yourshop@okaxis)" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;"/>';btn.insertAdjacentElement('beforebegin',w);btn.addEventListener('click',function(){const box=btn.closest('form,section,div')||document;const inps=Array.from(box.querySelectorAll('input'));const nEl=inps.find(i=>(i.placeholder||'').toLowerCase().includes('business name'));const cEl=inps.find(i=>(i.placeholder||'').toLowerCase().includes('category'));const t=(document.getElementById(idPre+'-t')||{}).value||'';const sv=(document.getElementById(idPre+'-s')||{}).value||'';const u=(document.getElementById(idPre+'-u')||{}).value||'';saveCfg(nEl?nEl.value.trim():'',cEl?cEl.value.trim():'',t.trim(),sv.trim(),u.trim());},true);}function scan(){const btns=Array.from(document.querySelectorAll('button'));const addBtn=btns.find(b=>(b.innerText||'').toLowerCase().includes('save & add business'));if(addBtn)inject(addBtn,'sb-ob-add');const signBtn=btns.find(b=>{const t=(b.innerText||'').toLowerCase();return t.includes('create account')||t.includes('register business')||t.includes('sign up');});if(signBtn&&signBtn.closest('#sb-auth-overlay'))inject(signBtn,'sb-ob-sgn');}window.addEventListener('DOMContentLoaded',()=>{scan();setTimeout(scan,800);new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});});})();</script><style id="sb-direct-css">#sb-d-auth{position:fixed;inset:0;z-index:999999!important;background:#020617;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;font-family:sans-serif;color:#fff;}#sb-d-card{width:100%;max-width:400px;background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,0.6);}.sb-d-tabs{display:flex;gap:8px;margin:14px 0;}.sb-d-tab{flex:1;padding:9px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#94a3b8;font-weight:700;cursor:pointer;font-size:13px;}.sb-d-tab.act{background:#4f46e5;color:#fff;border-color:#4f46e5;}.sb-d-inp{width:100%;box-sizing:border-box;margin:6px 0;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#020617;color:#fff;font-size:13px;outline:none;}.sb-d-btn{width:100%;margin-top:10px;padding:11px;border-radius:10px;border:none;background:#4f46e5;color:#fff;font-weight:700;font-size:14px;cursor:pointer;}#sb-d-err{color:#f87171;font-size:12px;margin-top:8px;text-align:center;min-height:16px;}</style><script id="sb-sync-signup">(function(){document.addEventListener('click',function(e){const b=e.target.closest('#sb-go-up');if(!b)return;const bn=(document.getElementById('sb-s-bn')||{}).value||'';const ct=(document.getElementById('sb-s-ct')||{}).value||'';const ph=(document.getElementById('sb-s-ph')||{}).value||'';if(bn.trim()&&ph.trim())localStorage.setItem('sb_pending_biz',JSON.stringify({bn:bn.trim(),ct:ct.trim()||'Business',ph:ph.trim()}));},true);function setVal(el,v){if(!el)return;const d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');if(d&&d.set)d.set.call(el,v);else el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}setInterval(function(){const raw=localStorage.getItem('sb_pending_biz');if(!raw)return;const ov=document.getElementById('sb-d-auth');if(ov&&ov.style.display!=='none')return;const btn=Array.from(document.querySelectorAll('button')).find(x=>!x.closest('#sb-d-auth')&&(x.innerText||'').toLowerCase().includes('save & add business')&&x.getBoundingClientRect().height>0);if(!btn)return;const inps=Array.from(document.querySelectorAll('input')).filter(i=>!i.closest('#sb-d-auth')&&i.getBoundingClientRect().height>0);const bnEl=inps.find(i=>(i.placeholder||'').toLowerCase().includes('business name'));const ctEl=inps.find(i=>(i.placeholder||'').toLowerCase().includes('category'));const phEl=inps.find(i=>(i.placeholder||'').toLowerCase().includes('phone'));if(!bnEl)return;const data=JSON.parse(raw);localStorage.removeItem('sb_pending_biz');setVal(bnEl,data.bn);setVal(ctEl,data.ct);setVal(phEl,data.ph);setTimeout(()=>btn.click(),300);},600);})();</script><style id="sb-fix-ui">#sb-ob-add-wrap{grid-column:1 / -1 !important;flex:0 0 100% !important;width:100% !important;display:grid !important;grid-template-columns:1fr !important;gap:8px !important;margin:6px 0 !important;}#sb-ob-add-wrap + button{grid-column:1 / -1 !important;flex:0 0 100% !important;width:100% !important;height:46px !important;min-height:46px !important;margin-top:6px !important;}#sb-bk-search:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #0f172a inset !important;-webkit-text-fill-color:#f8fafc !important;}</style><script id="sb-clean-ghost">(function(){function clean(){document.querySelectorAll('div,section').forEach(el=>{if(el.id&&el.id.startsWith('sb-'))return;if((el.innerText||'').trim()===''&&!el.querySelector('input,button,select,textarea,img,svg,canvas,iframe')){const r=el.getBoundingClientRect();if(r.width>120&&r.height>10&&r.height<160)el.style.display='none';}});}window.addEventListener('DOMContentLoaded',()=>{clean();setTimeout(clean,800);new MutationObserver(clean).observe(document.body,{childList:true,subtree:true});});})();</script><script id="sb-direct-js">(function(){const p=new URLSearchParams(location.search);if(location.pathname.includes('chat')||p.has('b')||p.has('business')||p.has('client'))return;function enterDash(){const ov=document.getElementById('sb-d-auth');if(ov)ov.style.display='none';let t=0;const iv=setInterval(()=>{t++;if(t>35){clearInterval(iv);return;}const pin=Array.from(document.querySelectorAll('input')).find(i=>(i.placeholder||'').toLowerCase().includes('pin')&&i.getBoundingClientRect().height>0);const ver=Array.from(document.querySelectorAll('button')).find(b=>(b.innerText||'').toLowerCase().includes('verify')&&b.getBoundingClientRect().height>0);if(pin&&ver){const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(pin,'4646');pin.dispatchEvent(new Event('input',{bubbles:true}));pin.dispatchEvent(new Event('change',{bubbles:true}));ver.click();return;}const adm=Array.from(document.querySelectorAll('button')).find(b=>(b.innerText||'').toLowerCase().includes('business admin login')&&b.getBoundingClientRect().height>0);if(adm){adm.click();return;}if(document.body.innerText.includes('Saved Bookings')){clearInterval(iv);}},300);}function showAuth(){if(document.getElementById('sb-d-auth'))return;const d=document.createElement('div');d.id='sb-d-auth';d.innerHTML='<div id="sb-d-card"><div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:#38bdf8;">Smart Booking (SB)</div><div style="font-size:12px;color:#94a3b8;margin-top:2px;">AI Appointment & Business Manager</div></div><div class="sb-d-tabs"><button type="button" class="sb-d-tab act" id="sb-t-in">Login</button><button type="button" class="sb-d-tab" id="sb-t-up">Sign Up</button></div><div id="sb-f-in"><input id="sb-l-ph" class="sb-d-inp" placeholder="Phone or Email"/><input id="sb-l-pw" type="password" class="sb-d-inp" placeholder="Password"/><button type="button" class="sb-d-btn" id="sb-go-in">Login to Dashboard</button></div><div id="sb-f-up" style="display:none;"><input id="sb-s-bn" class="sb-d-inp" placeholder="Business Name (e.g. Royal Salon)"/><input id="sb-s-ct" class="sb-d-inp" placeholder="Category (Salon, Clinic, Store)"/><input id="sb-s-ph" class="sb-d-inp" placeholder="Phone / WhatsApp Number"/><input id="sb-s-pw" type="password" class="sb-d-inp" placeholder="Create Password"/><input id="sb-s-tm" class="sb-d-inp" placeholder="Timings (e.g. 10AM-8PM, Mon Off)"/><input id="sb-s-sv" class="sb-d-inp" placeholder="Services & Prices (Haircut Rs 150)"/><input id="sb-s-up" class="sb-d-inp" placeholder="UPI ID (optional)"/><button type="button" class="sb-d-btn" id="sb-go-up">Create Business Account</button></div><div id="sb-d-err"></div><div style="text-align:center;margin-top:12px;"><button type="button" id="sb-m-adm" style="background:none;border:none;color:#64748b;font-size:11px;cursor:pointer;text-decoration:underline;">Master Admin Login</button></div></div>';document.body.appendChild(d);const err=m=>document.getElementById('sb-d-err').textContent=m;document.getElementById('sb-t-in').onclick=()=>{document.getElementById('sb-t-in').classList.add('act');document.getElementById('sb-t-up').classList.remove('act');document.getElementById('sb-f-in').style.display='block';document.getElementById('sb-f-up').style.display='none';err('');};document.getElementById('sb-t-up').onclick=()=>{document.getElementById('sb-t-up').classList.add('act');document.getElementById('sb-t-in').classList.remove('act');document.getElementById('sb-f-up').style.display='block';document.getElementById('sb-f-in').style.display='none';err('');};document.getElementById('sb-go-in').onclick=async()=>{const ph=document.getElementById('sb-l-ph').value.trim(),pw=document.getElementById('sb-l-pw').value.trim();if(!ph||!pw)return err('Enter Phone/Email and Password');err('Logging in...');try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:ph,email:ph,password:pw})}).then(x=>x.json());if(r.error)return err(r.error);localStorage.setItem('sb_v3_auth','admin');enterDash();}catch(e){err('Login failed. Try again.');}};document.getElementById('sb-go-up').onclick=async()=>{const bn=document.getElementById('sb-s-bn').value.trim(),ct=document.getElementById('sb-s-ct').value.trim(),ph=document.getElementById('sb-s-ph').value.trim(),pw=document.getElementById('sb-s-pw').value.trim(),tm=document.getElementById('sb-s-tm').value.trim(),sv=document.getElementById('sb-s-sv').value.trim(),up=document.getElementById('sb-s-up').value.trim();if(!bn||!ph||!pw)return err('Business Name, Phone & Password required');err('Creating account...');try{const r=await fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({businessName:bn,name:bn,category:ct,phone:ph,email:ph,password:pw})}).then(x=>x.json());if(r.error)return err(r.error);if(tm||sv||up)fetch('/api/biz-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({biz:bn,t:tm,s:sv,u:up})}).catch(()=>{});localStorage.setItem('sb_v3_auth','admin');enterDash();}catch(e){err('Signup failed. Try again.');}};document.getElementById('sb-m-adm').onclick=()=>{const pin=prompt('Enter Master Admin PIN:');if(pin==='4646'){localStorage.setItem('sb_v3_auth','admin');enterDash();}else if(pin){err('Invalid Master PIN');}};}document.addEventListener('click',e=>{const b=e.target.closest('button,a');if(!b)return;const t=(b.innerText||'').toLowerCase();if(t.includes('switch')||t.includes('logout')){localStorage.removeItem('sb_v3_auth');setTimeout(()=>location.reload(),150);}},true);function boot(){if(localStorage.getItem('sb_v3_auth')==='admin')enterDash();else showAuth();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();})();</script><script id="sb-otp-ui">
-(function(){
-const p=new URLSearchParams(location.search);
-if(location.pathname.indexOf("chat")>=0)return;
-if(p.has("b"))return;
-if(p.has("business"))return;
-if(p.has("client"))return;
-function valOf(id){const el=document.getElementById(id);return el&&el.value?el.value:"";}
-function makeOtpBox(idPre,getTarget){
-if(document.getElementById(idPre+"-otp-box"))return null;
-const wrap=document.createElement("div");wrap.id=idPre+"-otp-box";wrap.style.cssText="margin-top:8px;padding:10px;border-radius:12px;background:#020617;border:1px solid #334155;";
-const row=document.createElement("div");row.style.cssText="display:flex;gap:8px;align-items:center;";
-const sendBtn=document.createElement("button");sendBtn.type="button";sendBtn.id=idPre+"-send";sendBtn.textContent="Send OTP";sendBtn.style.cssText="padding:8px 12px;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#38bdf8;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;";
-const inp=document.createElement("input");inp.id=idPre+"-inp";inp.maxLength=6;inp.placeholder="Enter 6-digit OTP";inp.style.cssText="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;outline:none;";
-const verBtn=document.createElement("button");verBtn.type="button";verBtn.id=idPre+"-ver";verBtn.textContent="Verify";verBtn.style.cssText="padding:8px 12px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;";
-const st=document.createElement("div");st.id=idPre+"-st";st.textContent="Verify mobile number or email via OTP";st.style.cssText="font-size:11px;color:#94a3b8;margin-top:6px;";
-row.appendChild(sendBtn);row.appendChild(inp);row.appendChild(verBtn);wrap.appendChild(row);wrap.appendChild(st);
-let verifiedTarget="";
-sendBtn.onclick=async function(){const t=String(getTarget()).trim();if(!t){st.style.color="#f87171";st.textContent="Enter mobile number or email first";return;}st.style.color="#38bdf8";st.textContent="Sending OTP...";try{const r=await fetch("/api/otp/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:t})}).then(function(x){return x.json();});if(r.error){st.style.color="#f87171";st.textContent=r.error;return;}st.style.color="#34d399";st.textContent="OTP sent! (Demo/Test OTP: "+r.devOtp+")";}catch(e){st.style.color="#f87171";st.textContent="Could not send OTP";}};
-verBtn.onclick=async function(){const t=String(getTarget()).trim();const otp=String(inp.value?inp.value:"").trim();if(!t)return showMissing();if(!otp)return showMissing();function showMissing(){st.style.color="#f87171";st.textContent="Enter target and 6-digit OTP";}try{const r=await fetch("/api/otp/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:t,otp:otp})}).then(function(x){return x.json();});if(!r.verified){st.style.color="#f87171";st.textContent=r.error?r.error:"OTP verification failed";return;}verifiedTarget=t.toLowerCase();st.style.color="#34d399";st.textContent="OTP Verified!";}catch(e){st.style.color="#f87171";st.textContent="Verification error";}};
-return{isVerified:function(){const cur=String(getTarget()).trim().toLowerCase();return verifiedTarget!==""&&verifiedTarget===cur;},showErr:function(msg){st.style.color="#f87171";st.textContent=msg;}};
-}
-function attachOtp(){const goIn=document.getElementById("sb-go-in");const goUp=document.getElementById("sb-go-up");if(!goIn)return;if(!goUp)return;if(document.getElementById("sb-otp-in-box"))return;const inOtp=makeOtpBox("sb-otp-in",function(){return valOf("sb-l-ph");});const upOtp=makeOtpBox("sb-otp-up",function(){return valOf("sb-s-ph");});const inBox=document.getElementById("sb-otp-in-box");const upBox=document.getElementById("sb-otp-up-box");if(inOtp&&inBox)goIn.parentElement.insertBefore(inBox,goIn);if(upOtp&&upBox)goUp.parentElement.insertBefore(upBox,goUp);goIn.addEventListener("click",function(e){if(inOtp&&!inOtp.isVerified()){e.stopImmediatePropagation();e.preventDefault();inOtp.showErr("Please verify OTP first before Login");}},true);goUp.addEventListener("click",function(e){if(upOtp&&!upOtp.isVerified()){e.stopImmediatePropagation();e.preventDefault();upOtp.showErr("Please verify OTP first before creating account");}},true);}
-const iv=setInterval(function(){attachOtp();if(document.getElementById("sb-otp-in-box"))clearInterval(iv);},300);
-})();
-</script><style id="sb-layout-fix">#sb-ob-add-wrap{grid-column:1 / -1!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important;gap:8px!important;margin:6px 0!important;position:relative!important;left:0!important;float:none!important;box-sizing:border-box!important}#sb-ob-add-wrap input,#sb-ob-add-wrap textarea{width:100%!important;max-width:100%!important;box-sizing:border-box!important;position:static!important;float:none!important}</style><script id="sb-layout-js">setInterval(function(){const w=document.getElementById("sb-ob-add-wrap"),f=document.getElementById("nexaBizForm");if(!w||!f)return;const r=f.lastElementChild;if(r&&(w.parentElement!==f||w.nextElementSibling!==r))f.insertBefore(w,r)},400)</script><style id="sb-tabs-fix">#sb-bk-tabs{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow-x:auto!important}#sb-bk-tabs .sb-f-tab{padding:4px 7px!important;font-size:10px!important;white-space:nowrap!important}</style><style id="sb-tabs-fix">#sb-bk-tabs{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow-x:auto!important}#sb-bk-tabs .sb-f-tab{padding:4px 7px!important;font-size:10px!important;white-space:nowrap!important}</style><style id="sb-p1-css">
-#sb-p1-panel{margin:0 auto 14px auto;max-width:680px;background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:14px;color:#fff;font-family:sans-serif;box-sizing:border-box}
-.sb-p1-title{font-size:12px;font-weight:700;color:#38bdf8;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.4px}
-.sb-p1-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.sb-p1-chip{padding:7px 11px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:12px;font-weight:600;cursor:pointer;transition:0.15s}
-.sb-p1-chip.sel{background:#4f46e5;border-color:#6366f1;color:#fff}
-.sb-p1-chip.booked{background:#020617;border-color:#1e293b;color:#475569;text-decoration:line-through;cursor:not-allowed}
-.sb-p1-note{font-size:11px;color:#94a3b8;margin-top:-6px;margin-bottom:10px}
-</style>
-<script src="/phase1.js"></script>
-<script src="/phase2.js"></script>
-<script src="/phase3.js"></script>
-<script src="/admin_profile.js"></script>
-<script id="sb-admin-full-cfg">(function(){
-  const p = new URLSearchParams(location.search);
-  if (location.pathname.includes('chat') || p.has('b') || p.has('business') || p.has('client')) return;
+  <script>
+    let history = [];
+    let allBusinesses = {};
+    let currentBookingFilter = 'all';
 
-  function getActiveBiz() {
-    const sel = document.querySelector('select');
-    return (sel && sel.value) ? sel.value.trim() : 'Default';
-  }
+    // Accordion toggle
+    function toggleAccordion(panelId, btn) {
+      const panel = document.getElementById(panelId);
+      const isOpen = panel.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    }
 
-  function enhanceModal() {
-    const modal = document.getElementById('sb-pro-modal');
-    const saveBtn = document.getElementById('sb-csave');
-    const tInp = document.getElementById('sb-ct');
-    const sInp = document.getElementById('sb-cs');
-    const uInp = document.getElementById('sb-cu');
-    if (!modal || modal.style.display === 'none' || !saveBtn || !tInp || !sInp || !uInp) return;
-    if (document.getElementById('sb-cstaff')) return;
-
-    const biz = getActiveBiz();
-    const key = biz.toLowerCase();
-    let localMap = {};
-    try { localMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}'); } catch (_) {}
-    const saved = localMap[key] || {};
-
-    const offInp = document.createElement('input');
-    offInp.id = 'sb-coff';
-    offInp.className = 'sb-pro-inp';
-    offInp.placeholder = 'Weekly Off / Break (e.g. Mon Off, Lunch 2PM-3PM)';
-    offInp.value = saved.off || '';
-
-    const staffInp = document.createElement('input');
-    staffInp.id = 'sb-cstaff';
-    staffInp.className = 'sb-pro-inp';
-    staffInp.placeholder = 'Staff / Employees (e.g. Rahul, Aman, Senior Stylist)';
-    staffInp.value = saved.staff || '';
-
-    uInp.insertAdjacentElement('afterend', offInp);
-    offInp.insertAdjacentElement('afterend', staffInp);
-
-    const origClick = saveBtn.onclick;
-    saveBtn.onclick = async function(ev) {
-      const payload = {
-        biz,
-        t: (tInp.value || '').trim(),
-        s: (sInp.value || '').trim(),
-        u: (uInp.value || '').trim(),
-        off: (offInp.value || '').trim(),
-        staff: (staffInp.value || '').trim()
-      };
+    // Stats
+    async function loadStats() {
       try {
-        const curMap = JSON.parse(localStorage.getItem('sb_biz_cfg_by_biz') || '{}');
-        curMap[key] = Object.assign({}, curMap[key] || {}, payload);
-        localStorage.setItem('sb_biz_cfg_by_biz', JSON.stringify(curMap));
-      } catch (_) {}
+        const res = await fetch('/api/data');
+        const data = await res.json();
+        document.getElementById('statBiz').textContent = Object.keys(data.businesses || {}).length || '0';
+        document.getElementById('statBookings').textContent = (data.records || []).length || '0';
+      } catch (e) { console.error('stats load failed', e); }
+    }
+
+    // Business dropdown
+    function populateDropdown(businesses, selectId) {
+      allBusinesses = businesses;
+      const sel = document.getElementById(selectId || 'bizSelect');
+      const currentVal = sel.value;
+      sel.innerHTML = Object.entries(businesses).map(([id, b]) =>
+        '<option value="' + id + '">' + b.name + ' (' + b.type + ')</option>'
+      ).join('');
+      if (currentVal && businesses[currentVal]) sel.value = currentVal;
+
+      // Also populate setup default biz
+      const setupSel = document.getElementById('setupDefaultBiz');
+      if (setupSel) {
+        setupSel.innerHTML = Object.entries(businesses).map(([id, b]) =>
+          '<option value="' + id + '">' + b.name + ' (' + b.type + ')</option>'
+        ).join('');
+        if (currentVal && businesses[currentVal]) setupSel.value = currentVal;
+      }
+    }
+
+    function resetChat() {
+      history = [];
+      const bizId = document.getElementById('bizSelect').value;
+      const bName = allBusinesses[bizId] ? allBusinesses[bizId].name : 'AI Assistant';
+      document.getElementById('chatBox').innerHTML = '<div class="msg bot">Namaste! <b>' + bName + '</b> me aapka swagat hai. Main aapki kaise madad kar sakta hoon?</div>';
+    }
+
+    async function init() {
+      const res = await fetch('/api/data');
+      const data = await res.json();
+      populateDropdown(data.businesses);
+      renderRecords(data.records);
+      resetChat();
+      loadStats();
+      loadAdminSetup();
+    }
+
+    function copyClientLink() {
+      const id = document.getElementById('bizSelect').value;
+      const url = window.location.origin + '/?b=' + encodeURIComponent(id);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => alert('Client Link Copied! ' + url)).catch(() => prompt('Copy link:', url));
+      } else { prompt('Copy link:', url); }
+    }
+
+    // Chat
+    async function sendMsg() {
+      const input = document.getElementById('msgInput');
+      const btn = document.getElementById('sendBtn');
+      const text = input.value.trim();
+      if (!text) return;
+      const bizId = document.getElementById('bizSelect').value;
+
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML += '<div class="msg user">' + text + '</div>';
+      input.value = '';
+      btn.disabled = true;
+      btn.innerText = '...';
+      chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
-        await fetch('/api/biz-config', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ businessId: bizId, message: text, history })
         });
-      } catch (_) {}
+        const data = await res.json();
 
-      if (typeof origClick === 'function') {
-        return origClick.call(this, ev);
+        if (data.reply) {
+          chatBox.innerHTML += '<div class="msg bot">' + data.reply.replace(/\n/g, '<br>') + '</div>';
+          history.push({ role: 'user', parts: [{ text }] });
+          history.push({ role: 'model', parts: [{ text: data.reply }] });
+        } else if (data.error) {
+          chatBox.innerHTML += '<div class="msg err">Error: ' + data.error + '</div>';
+        }
+        if (data.records) renderRecords(data.records);
+      } catch (e) {
+        chatBox.innerHTML += '<div class="msg err">Error: ' + e.message + '</div>';
       }
-    };
-  }
+      btn.disabled = false;
+      btn.innerText = 'Send';
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-  const obs = new MutationObserver(enhanceModal);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => obs.observe(document.body, { childList: true, subtree: true }));
-  } else {
-    obs.observe(document.body, { childList: true, subtree: true });
-  }
-})();</script>
-<script id="sb-p2-card-guard">(function(){
-    function cleanCards(){
-      document.querySelectorAll('[data-p2-id]').forEach(function(card){
-        var btns = Array.from(card.querySelectorAll('button')).filter(function(b){
-          var t = (b.textContent || '').trim().toLowerCase();
-          return t === 'confirm' || t === 'complete' || t === 'cancel';
-        });
-        btns.slice(3).forEach(function(extra){
-          var p = extra.parentElement;
-          extra.remove();
-          if (p && p.children.length === 0 && !p.hasAttribute('data-p2-id')) p.remove();
-        });
+    // Bookings rendering + filtering
+    function renderRecords(records) {
+      const box = document.getElementById('recordsBox');
+      if (!records || records.length === 0) {
+        box.innerHTML = '<p class="muted" style="padding:12px;">Abhi koi booking nahi hai.</p>';
+        return;
+      }
+      let html = '';
+      for (const r of records) {
+        const status = (r.status || 'pending').toLowerCase();
+        if (currentBookingFilter !== 'all' && status !== currentBookingFilter) continue;
+
+        const id = r.id || '—';
+        const biz = r.businessName || r.businessId || '—';
+        const name = r.customerName || '—';
+        const phone = r.phone || '—';
+        const type = r.requestType || 'Booking';
+        const details = r.details || '—';
+        const ts = r.timestamp || '';
+
+        html += '<div class="record" style="display:flex;flex-direction:column;gap:6px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+            '<strong>[' + id + '] ' + biz + '</strong>' +
+            '<span class="badge ' + status + '">' + status + '</span>' +
+          '</div>' +
+          '<div style="font-size:13px;">Customer: ' + name + ' (' + phone + ')</div>' +
+          '<div style="font-size:13px;">' + type + ': ' + details + '</div>' +
+          '<div class="muted" style="font-size:11px;">' + ts + '</div>' +
+          '<div class="bk-actions">' +
+            '<button type="button" class="bk-act-btn confirm" onclick="updateBookingStatus(\'' + id + '\',\'confirmed\')">Confirm</button>' +
+            '<button type="button" class="bk-act-btn complete" onclick="updateBookingStatus(\'' + id + '\',\'completed\')">Complete</button>' +
+            '<button type="button" class="bk-act-btn cancel" onclick="updateBookingStatus(\'' + id + '\',\'cancelled\')">Cancel</button>' +
+            '<button type="button" class="bk-act-btn whatsapp" onclick="openWhatsApp(\'' + phone + '\',\'' + id + '\',\'' + biz + '\',\'' + type + '\',\'' + details + '\')">WhatsApp</button>' +
+            '<button type="button" class="bk-act-btn receipt" onclick="openReceipt(\'' + id + '\',\'' + biz + '\',\'' + name + '\',\'' + phone + '\',\'' + type + '\',\'' + details + '\')">Receipt</button>' +
+          '</div>' +
+        '</div>';
+      }
+      box.innerHTML = html || '<p class="muted" style="padding:12px;">No bookings match the current filter.</p>';
+    }
+
+    function filterBookings() {
+      const q = document.getElementById('bkSearch').value.toLowerCase();
+      const rows = document.queryencerAll('#recordsBox .record');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
       });
     }
-    setInterval(cleanCards, 1500);
-  })();</script>
+
+    function setBookingFilter(status) {
+      currentBookingFilter = status;
+      document.querySelectorAll('.bk-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === status);
+      });
+      renderRecords(window.__lastRecords || []);
+    }
+
+    // Store records globally for filtering
+    const originalRender = renderRecords;
+    renderRecords = function(records) {
+      window.__lastRecords = records;
+      originalRender(records);
+    };
+
+    async function updateBookingStatus(id, status) {
+      if (status === 'cancelled' && !confirm('Cancel this booking?')) return;
+      try {
+        await fetch('/api/businesses/' + id + '/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const res = await fetch('/api/data');
+        const data = await res.json();
+        renderRecords(data.records);
+      } catch (e) { alert('Failed: ' + e.message); }
+    }
+
+    function openWhatsApp(phone, id, biz, type, details) {
+      const clean = phone.replace(/\D/g, '');
+      const msg = encodeURIComponent('Booking ' + id + ' at ' + biz + ': ' + type + ' - ' + details);
+      window.open('https://wa.me/' + clean + '?text=' + msg, '_blank');
+    }
+
+    function openReceipt(id, biz, name, phone, type, details) {
+      const win = window.open('', '_blank');
+      win.document.write('<html><head><title>Receipt ' + id + '</title><style>body{font-family:sans-serif;padding:20px;background:#0b1120;color:#f8fafc}.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;max-width:400px;margin:0 auto}</style></head><body><div class="card"><h2>Booking Receipt</h2><p><b>ID:</b> ' + id + '</p><p><b>Business:</b> ' + biz + '</p><p><b>Customer:</b> ' + name + ' (' + phone + ')</p><p><b>Type:</b> ' + type + '</p><p><b>Details:</b> ' + details + '</p><p class="muted">Smart Booking SaaS</p></div></body></html>');
+    }
+
+    // Add Business
+    async function addBusiness() {
+      const name = document.getElementById('bName').value.trim();
+      const type = document.getElementById('bType').value.trim();
+      const details = document.getElementById('bDetails').value.trim();
+      const instructions = document.getElementById('bInst').value.trim();
+      if (!name || !type || !details) return alert('Please fill Name, Type and Details!');
+
+      const res = await fetch('/api/businesses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type, details, instructions })
+      });
+      const data = await res.json();
+      if (data.success) {
+        populateDropdown(data.businesses);
+        document.getElementById('bizSelect').value = data.id;
+        document.getElementById('bName').value = '';
+        document.getElementById('bType').value = '';
+        document.getElementById('bDetails').value = '';
+        document.getElementById('bInst').value = '';
+        resetChat();
+        document.getElementById('adminMsg').textContent = '✅ Business created and selected!';
+      }
+    }
+
+    // Admin Setup
+    const SETUP_KEY = 'sb_admin_setup_v1';
+    function loadAdminSetup() {
+      try {
+        const s = JSON.parse(localStorage.getItem(SETUP_KEY) || '{}');
+        document.getElementById('setupName').value = s.name || '';
+        document.getElementById('setupRole').value = s.role || '';
+        document.getElementById('setupPhone').value = s.phone || '';
+        document.getElementById('setupEmail').value = s.email || '';
+        document.getElementById('setupPin').value = s.pin || '4646';
+        document.getElementById('setupBrand').value = s.brand || 'Smart Booking SaaS';
+        document.getElementById('setupFooter').value = s.footer || 'Thank you for your booking!';
+        document.getElementById('setupAutoWa').checked = s.autoWa !== false;
+        if (s.defaultBiz) document.getElementById('setupDefaultBiz').value = s.defaultBiz;
+      } catch (e) {}
+    }
+
+    function saveAdminSetup() {
+      const data = {
+        name: document.getElementById('setupName').value.trim(),
+        role: document.getElementById('setupRole').value.trim(),
+        phone: document.getElementById('setupPhone').value.trim(),
+        email: document.getElementById('setupEmail').value.trim(),
+        pin: document.getElementById('setupPin').value.trim() || '4646',
+        brand: document.getElementById('setupBrand').value.trim() || 'Smart Booking SaaS',
+        footer: document.getElementById('setupFooter').value.trim(),
+        autoWa: document.getElementById('setupAutoWa').checked,
+        defaultBiz: document.getElementById('setupDefaultBiz').value
+      };
+      localStorage.setItem(SETUP_KEY, JSON.stringify(data));
+      showSetupStatus('Setup saved!');
+    }
+
+    function applyDefaultBusiness() {
+      const biz = document.getElementById('setupDefaultBiz').value;
+      if (biz && allBusinesses[biz]) {
+        document.getElementById('bizSelect').value = biz;
+        document.getElementById('bizSelect').dispatchEvent(new Event('change'));
+        showSetupStatus('Switched to ' + allBusinesses[biz].name);
+      }
+    }
+
+    function copyAdminUrl() {
+      navigator.clipboard.writeText(window.location.origin + window.location.pathname).then(() => showSetupStatus('Admin URL copied!'));
+    }
+
+    function copyClientUrl() {
+      const biz = document.getElementById('setupDefaultBiz').value;
+      const url = window.location.origin + '/?b=' + encodeURIComponent(biz);
+      navigator.clipboard.writeText(url).then(() => showSetupStatus('Client link copied!'));
+    }
+
+    function showSetupStatus(msg) {
+      const el = document.getElementById('setupStatus');
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 2000);
+    }
+
+    // Admin PIN lock
+    const DEFAULT_PIN = '4646';
+    function checkAdminAuth() {
+      const p = new URLSearchParams(window.location.search).get('b');
+      if (p) return;
+      const saved = localStorage.getItem('saas_admin_pin');
+      if (saved !== DEFAULT_PIN) {
+        document.getElementById('adminLockModal').style.display = 'flex';
+      }
+    }
+    function unlockAdmin() {
+      const val = document.getElementById('adminPinInput').value.trim();
+      if (val === DEFAULT_PIN) {
+        localStorage.setItem('saas_admin_pin', val);
+        document.getElementById('adminLockModal').style.display = 'none';
+      } else {
+        document.getElementById('pinErr').innerText = 'Galat PIN! Dobara koshish karein.';
+      }
+    }
+
+    // Init
+    checkAdminAuth();
+    init();
+  </script>
 </body>
-    </html>
-  `);
+</html>
+`);
 });
+;
 
 app.get("/manifest.json", (req, res) => { res.json({ name: "AI Support and Booking SaaS", short_name: "AI Agent SaaS", start_url: "/", display: "standalone", background_color: "#0b1120", theme_color: "#2563eb", icons: [{ src: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", sizes: "512x512", type: "image/png" }] }); });
 app.get("/sw.js", (req, res) => { res.type("application/javascript"); res.send("self.addEventListener('fetch', function() {});"); });
